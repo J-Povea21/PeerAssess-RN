@@ -1,25 +1,82 @@
+import LocalStorage from '@/src/core/storage/localStorage';
+import { STORAGE_KEYS } from '@/src/core/storage/storageKeys';
 import { create } from 'zustand';
 
+type AuthUser = {
+  email: string;
+  canonicalUserId: string;
+};
+
 type AuthState = {
-  accessToken: string | null;
-  refreshToken: string | null;
-  setTokens: (accessToken: string, refreshToken: string) => void;
-  logout: () => void;
+  user: AuthUser | null;
+  isLoading: boolean;
+
+  login: (user: AuthUser) => Promise<void>;
+  logout: () => Promise<void>;
+  restoreSession: () => Promise<void>;
 };
 
 export const useAuthStore = create<AuthState>((set) => ({
-  accessToken: null,
-  refreshToken: null,
+  user: null,
+  isLoading: true,
 
-  setTokens: (accessToken, refreshToken) =>
-    set({
-      accessToken,
-      refreshToken,
-    }),
+  login: async (user) => {
+    await LocalStorage.set(
+      STORAGE_KEYS.userEmail,
+      user.email
+    );
 
-  logout: () =>
+    await LocalStorage.set(
+      STORAGE_KEYS.canonicalUserId,
+      user.canonicalUserId
+    );
+
     set({
-      accessToken: null,
-      refreshToken: null,
-    }),
+      user,
+      isLoading: false,
+    });
+  },
+
+  logout: async () => {
+    await LocalStorage.remove(STORAGE_KEYS.accessToken);
+    await LocalStorage.remove(STORAGE_KEYS.refreshToken);
+    await LocalStorage.remove(STORAGE_KEYS.userEmail);
+    await LocalStorage.remove(STORAGE_KEYS.canonicalUserId);
+
+    set({
+      user: null,
+      isLoading: false,
+    });
+  },
+
+  restoreSession: async () => {
+    const accessToken = await LocalStorage.get(
+      STORAGE_KEYS.accessToken
+    );
+
+    const email = await LocalStorage.get(
+      STORAGE_KEYS.userEmail
+    );
+
+    const canonicalUserId = await LocalStorage.get(
+      STORAGE_KEYS.canonicalUserId
+    );
+
+    if (accessToken && email && canonicalUserId) {
+      set({
+        user: {
+          email,
+          canonicalUserId,
+        },
+        isLoading: false,
+      });
+
+      return;
+    }
+
+    set({
+      user: null,
+      isLoading: false,
+    });
+  },
 }));
