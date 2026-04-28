@@ -15,9 +15,9 @@ export default function AppNavigator() {
     restoreSession,
   } = useAuthStore();
 
-  useEffect(() => {
-    restoreSession();
-  }, []);
+ useEffect(() => {
+  restoreSession();
+}, [restoreSession]);
 
   if (isLoading) {
     return (
