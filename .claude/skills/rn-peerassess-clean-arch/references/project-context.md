@@ -68,7 +68,7 @@ Each criterion is scored on a scale: Needs Improvement (2.0), Adequate (3.0), Go
 
 ## Technical Requirements
 1. The app must adhere to clean architecture principles.
-2. State management uses **React Context API** with custom hooks per feature.
+2. State management uses **Zustand** (`zustand` package) with one store per feature. Stores are initialized by `DIProvider` at bootstrap and consumed via `use[Entity]Store()` hooks directly in screens — no provider wrapping required.
 3. Navigation uses **React Navigation** (stack + bottom tabs).
 4. Authentication and data storage use **Roble** (openlab.uninorte.edu.co).
 5. UI components use **react-native-paper**.

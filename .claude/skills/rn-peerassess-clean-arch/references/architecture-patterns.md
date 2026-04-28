@@ -10,7 +10,7 @@ This document contains the exact code patterns used in the PeerAssess React Nati
 5. [Data Layer — Local Datasource](#data-layer--local-datasource)
 6. [Data Layer — Remote Datasource](#data-layer--remote-datasource)
 7. [Data Layer — Concrete Repository](#data-layer--concrete-repository)
-8. [Presentation Layer — Context](#presentation-layer--context)
+8. [Presentation Layer — Zustand Store](#presentation-layer--zustand-store)
 9. [Presentation Layer — Screens](#presentation-layer--screens)
 10. [DI Registration](#di-registration)
 11. [Naming Conventions](#naming-conventions)
@@ -349,107 +349,104 @@ export class ProductRepositoryImpl implements ProductRepository {
 
 ---
 
-## Presentation Layer — Context
+## Presentation Layer — Zustand Store
 
-Location: `presentation/context/[entity]Context.tsx`
+Location: `presentation/store/use[Entity]Store.ts`
 
-React Context that manages state and delegates to the repository. Exports three things: the context object, the provider component, and the consumer hook.
+Zustand store that manages state and delegates to the repository. Exports a single hook consumed directly in screens — no provider wrapping needed.
 
-```tsx
-import React, {
-  createContext,
-  ReactNode,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+```ts
+import { create } from "zustand";
 
-import { useDI } from "@/src/core/di/DIProvider";
-import { TOKENS } from "@/src/core/di/tokens";
 import { NewProduct, Product } from "@/src/features/products/domain/entities/Product";
-import { ProductRepository } from "../../domain/repositories/ProductRepository";
+import { ProductRepository } from "@/src/features/products/domain/repositories/ProductRepository";
 
-export type ProductContextType = {
+type ProductState = {
   products: Product[];
   isLoading: boolean;
   error: string | null;
-  clearError: () => void;
+  _repo: ProductRepository | null;
+  init: (repo: ProductRepository) => void;
+  fetchProducts: () => Promise<void>;
   addProduct: (product: NewProduct) => Promise<void>;
   updateProduct: (product: Product) => Promise<void>;
   removeProduct: (id: string) => Promise<void>;
-  getProduct: (id: string) => Promise<Product | undefined>;
-  refreshProducts: () => Promise<void>;
+  clearError: () => void;
 };
 
-export const ProductContext = createContext<ProductContextType | undefined>(undefined);
+export const useProductStore = create<ProductState>((set, get) => ({
+  products: [],
+  isLoading: false,
+  error: null,
+  _repo: null,
 
-export function ProductProvider({ children }: { children: ReactNode }) {
-  const di = useDI();
-  const productRepo = useMemo(
-    () => di.resolve<ProductRepository>(TOKENS.ProductRepo),
-    [di]
-  );
+  init: (repo) => set({ _repo: repo }),
 
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const clearError = () => setError(null);
-
-  useEffect(() => {
-    refreshProducts();
-  }, []);
-
-  const refreshProducts = async () => {
+  fetchProducts: async () => {
+    const { _repo } = get();
+    if (!_repo) throw new Error("ProductStore not initialized");
+    set({ isLoading: true, error: null });
     try {
-      setIsLoading(true);
-      setError(null);
-      setProducts(await productRepo.getProducts());
+      set({ products: await _repo.getProducts() });
     } catch (e) {
-      setError((e as Error).message);
+      set({ error: (e as Error).message });
     } finally {
-      setIsLoading(false);
+      set({ isLoading: false });
     }
-  };
+  },
 
-  const addProduct = async (product: NewProduct) => {
+  addProduct: async (product) => {
+    const { _repo } = get();
+    if (!_repo) throw new Error("ProductStore not initialized");
+    set({ isLoading: true, error: null });
     try {
-      setIsLoading(true);
-      setError(null);
-      await productRepo.addProduct(product);
-      await refreshProducts();
+      await _repo.addProduct(product);
+      await get().fetchProducts();
     } catch (e) {
-      setError((e as Error).message);
+      set({ error: (e as Error).message });
     } finally {
-      setIsLoading(false);
+      set({ isLoading: false });
     }
-  };
+  },
 
-  // ... updateProduct, removeProduct, getProduct follow same pattern
+  updateProduct: async (product) => {
+    const { _repo } = get();
+    if (!_repo) throw new Error("ProductStore not initialized");
+    set({ isLoading: true, error: null });
+    try {
+      await _repo.updateProduct(product);
+      await get().fetchProducts();
+    } catch (e) {
+      set({ error: (e as Error).message });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
 
-  const value = useMemo(
-    () => ({ products, isLoading, error, clearError, addProduct, updateProduct, removeProduct, getProduct, refreshProducts }),
-    [products, isLoading, error]
-  );
+  removeProduct: async (id) => {
+    const { _repo } = get();
+    if (!_repo) throw new Error("ProductStore not initialized");
+    set({ isLoading: true, error: null });
+    try {
+      await _repo.deleteProduct(id);
+      await get().fetchProducts();
+    } catch (e) {
+      set({ error: (e as Error).message });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
 
-  return <ProductContext.Provider value={value}>{children}</ProductContext.Provider>;
-}
-
-export function useProducts() {
-  const ctx = useContext(ProductContext);
-  if (!ctx) throw new Error("useProducts must be used inside ProductProvider");
-  return ctx;
-}
+  clearError: () => set({ error: null }),
+}));
 ```
 
 **Key points:**
-- Resolves repository via `useDI()` + `TOKENS.[Entity]Repo` — never instantiates directly
-- `useMemo` on repository resolution prevents re-creation on re-renders
-- Each write method: `setIsLoading(true)` → `setError(null)` → operation → `refreshProducts()` → `finally setIsLoading(false)`
-- `value` wrapped in `useMemo` keyed on `[items, isLoading, error]`
-- Consumer hook throws a descriptive error if used outside provider
-- **Stability note:** Functions defined inside the provider body are recreated on every render. Wrap them with `useCallback` if downstream components need stable references. Without it, the `useMemo` on `value` still prevents re-renders when `products`/`isLoading`/`error` haven't changed, but function identity is not stable across renders.
+- `_repo: null` starts uninitialized — `DIProvider` calls `use[Entity]Store.getState().init(repo)` synchronously inside its `useMemo` block before any child renders
+- Every action calls `get()._repo` and throws if `null` — this surfaces misconfigured DI early at runtime
+- Write operations call `fetchProducts()` via `get()` after the mutation to keep state fresh (read-after-write pattern)
+- No provider wrapping required — `useProductStore()` works in any component anywhere in the tree
+- `_repo` is typed as the domain interface (`ProductRepository`), never the concrete class — the store only knows about the interface contract
 
 ---
 
@@ -508,6 +505,9 @@ export const TOKENS = {
 Register inside the `useMemo` block. Order matters: datasource first, then repository.
 
 ```tsx
+import { AuthRemoteDataSourceImpl } from "@/src/features/auth/data/datasources/AuthRemoteDataSourceImp";
+import { useProductStore } from "@/src/features/products/presentation/store/useProductStore";
+
 export function DIProvider({ children }: { children: React.ReactNode }) {
   const container = useMemo(() => {
     const c = new Container();
@@ -523,6 +523,7 @@ export function DIProvider({ children }: { children: React.ReactNode }) {
     const productRepo = new ProductRepositoryImpl(productDS);
     c.register(TOKENS.ProductRemoteDS, productDS)
      .register(TOKENS.ProductRepo, productRepo);
+    useProductStore.getState().init(productRepo);
 
     // [Entity] — add new modules here
     return c;
@@ -549,9 +550,8 @@ export function DIProvider({ children }: { children: React.ReactNode }) {
 | Concrete classes | `*Impl` suffix | `ProductRepositoryImpl` |
 | Remote datasource | `*RemoteDataSourceImpl` | `ProductRemoteDataSourceImpl` |
 | Local datasource | `*LocalDataSourceImpl` | `ProductLocalDataSourceImpl` |
-| Context file | `camelCase` + `Context.tsx` | `productContext.tsx` |
-| Provider component | `[Entity]Provider` | `ProductProvider` |
-| Consumer hook | `use[Entity]` | `useProducts` |
+| Store file | `use[Entity]Store.ts` | `useProductStore.ts` |
+| Store hook | `use[Entity]Store` | `useProductStore` |
 | Screen components | `[Action][Entity]Screen` | `AddProductScreen` |
 | Entity type | `PascalCase` | `Product` |
 | Creation type | `New[Entity]` | `NewProduct` |
