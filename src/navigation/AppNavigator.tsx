@@ -2,11 +2,12 @@ import React from "react";
 
 import AuthStackNavigator from "./AuthStackNavigator";
 import StudentTabsNavigator from "./StudentTabsNavigator";
+import { useAuthStore } from "../features/auth/presentation/useAuthStore";
 
 export default function AppNavigator() {
-  const isAuthenticated = false;
+  const { user } = useAuthStore();
 
-  if (isAuthenticated) {
+  if (user) {
     return <StudentTabsNavigator />;
   }
 
