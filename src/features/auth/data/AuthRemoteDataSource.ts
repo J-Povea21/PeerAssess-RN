@@ -1,5 +1,7 @@
 import { AuthUser } from "../domain/AuthUser";
 import readTable from "../../../core/roble/readTable";
+import { LocalPreferencesAsyncStorage } from "../../../core/LocalPreferencesAsyncStorage";
+import { STORAGE_KEYS } from "../../../core/storageKeys";
 
 const BASE_URL =
   "https://roble-api.openlab.uninorte.edu.co";
@@ -31,7 +33,7 @@ export default class AuthRemoteDataSource {
       }
     );
 
-    if (!response.ok) {
+    if (response.status !== 201) {
       throw new Error(
         "Invalid credentials"
       );
@@ -63,17 +65,48 @@ export default class AuthRemoteDataSource {
   }
 
   async logout(): Promise<void> {
+    const storage =
+      LocalPreferencesAsyncStorage.getInstance();
+
+    const accessToken =
+      await storage.retrieveData<string>(
+        STORAGE_KEYS.accessToken
+      );
+
     await fetch(
       `${BASE_URL}/auth/${ROBLE_TOKEN}/logout`,
       {
         method: "POST",
+        headers: {
+          Authorization: accessToken
+            ? `Bearer ${accessToken}`
+            : "",
+        },
       }
     );
   }
 
   async verifyToken(): Promise<boolean> {
+    const storage =
+      LocalPreferencesAsyncStorage.getInstance();
+
+    const accessToken =
+      await storage.retrieveData<string>(
+        STORAGE_KEYS.accessToken
+      );
+
+    if (!accessToken) {
+      return false;
+    }
+
     const response = await fetch(
-      `${BASE_URL}/auth/${ROBLE_TOKEN}/verify-token`
+      `${BASE_URL}/auth/${ROBLE_TOKEN}/verify-token`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
     );
 
     return response.ok;

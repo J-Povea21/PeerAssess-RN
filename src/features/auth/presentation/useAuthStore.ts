@@ -9,6 +9,7 @@ import { STORAGE_KEYS } from "../../../core/storageKeys";
 
 type AuthState = {
   user: AuthUser | null;
+  canonicalUserId: string | null;
   isLoading: boolean;
 
   login: (
@@ -31,41 +32,52 @@ const storage =
 export const useAuthStore = create<AuthState>(
   (set) => ({
     user: null,
+    canonicalUserId: null,
     isLoading: true,
 
     login: async (email, password) => {
-      set({ isLoading: true });
+      try {
+        set({ isLoading: true });
 
-      const result =
-        await authRepository.login(
-          email,
-          password
+        const result =
+          await authRepository.login(
+            email,
+            password
+          );
+
+        await storage.storeData(
+          STORAGE_KEYS.accessToken,
+          result.accessToken
         );
 
-      await storage.storeData(
-        STORAGE_KEYS.accessToken,
-        result.accessToken
-      );
+        await storage.storeData(
+          STORAGE_KEYS.refreshToken,
+          result.refreshToken
+        );
 
-      await storage.storeData(
-        STORAGE_KEYS.refreshToken,
-        result.refreshToken
-      );
+        await storage.storeData(
+          STORAGE_KEYS.userEmail,
+          result.user.email
+        );
 
-      await storage.storeData(
-        STORAGE_KEYS.userEmail,
-        result.user.email
-      );
+        await storage.storeData(
+          STORAGE_KEYS.canonicalUserId,
+          result.user.canonicalUserId
+        );
 
-      await storage.storeData(
-        STORAGE_KEYS.canonicalUserId,
-        result.user.canonicalUserId
-      );
+        set({
+          user: result.user,
+          canonicalUserId:
+            result.user.canonicalUserId,
+          isLoading: false,
+        });
+      } catch (error) {
+        set({
+          isLoading: false,
+        });
 
-      set({
-        user: result.user,
-        isLoading: false,
-      });
+        throw error;
+      }
     },
 
     logout: async () => {
@@ -89,9 +101,11 @@ export const useAuthStore = create<AuthState>(
 
       set({
         user: null,
+        canonicalUserId: null,
         isLoading: false,
       });
     },
+
     restoreSession: async () => {
       try {
         const isValid =
@@ -100,6 +114,7 @@ export const useAuthStore = create<AuthState>(
         if (!isValid) {
           set({
             user: null,
+            canonicalUserId: null,
             isLoading: false,
           });
           return;
@@ -121,6 +136,7 @@ export const useAuthStore = create<AuthState>(
               email,
               canonicalUserId,
             },
+            canonicalUserId,
             isLoading: false,
           });
           return;
@@ -128,11 +144,13 @@ export const useAuthStore = create<AuthState>(
 
         set({
           user: null,
+          canonicalUserId: null,
           isLoading: false,
         });
       } catch {
         set({
           user: null,
+          canonicalUserId: null,
           isLoading: false,
         });
       }
