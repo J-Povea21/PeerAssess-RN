@@ -461,8 +461,8 @@ Screens are not prescriptive — their number and purpose depend on the feature'
 - Default export functional component: `export default function AddProductScreen(...)`
 - Use `navigation` prop for navigation (`{ navigation: any }`)
 
-### Accessing context state
-- Consume via the feature hook: `const { products, addProduct, isLoading } = useProducts()`
+### Accessing store state
+- Consume via the feature store hook: `const { products, addProduct, isLoading } = useProductStore()`
 - Never resolve DI tokens directly in screens
 
 ### Navigation patterns
@@ -472,7 +472,7 @@ Screens are not prescriptive — their number and purpose depend on the feature'
 
 ### Error handling in screens
 - Display errors via `<Snackbar>` from `react-native-paper`
-- Use `error` and `clearError` from the context
+- Use `error` and `clearError` from the store hook
 
 ### Loading states
 - Show `<ActivityIndicator>` when `isLoading` is true
@@ -536,7 +536,7 @@ export function DIProvider({ children }: { children: React.ReactNode }) {
 **Key points:**
 - `authDS` is passed to feature datasources that need token refresh
 - Register datasource **typed as concrete** (it's needed for `authService`)
-- Register repository token so contexts can resolve via the interface
+- Register repository token for observability; the store is initialized directly via `use[Entity]Store.getState().init(repo)`, not by resolving from the container at runtime
 - Add a comment block per module for readability
 
 ---
@@ -563,10 +563,11 @@ export function DIProvider({ children }: { children: React.ReactNode }) {
 
 Use the `@/src/` path alias for cross-feature imports:
 ```ts
-import { useDI } from "@/src/core/di/DIProvider";
-import { TOKENS } from "@/src/core/di/tokens";
+import { useProductStore } from "@/src/features/products/presentation/store/useProductStore";
 import { AuthRemoteDataSourceImpl } from "@/src/features/auth/data/datasources/AuthRemoteDataSourceImp";
 ```
+
+> `useDI` and `TOKENS` are only needed inside `DIProvider.tsx` itself when wiring up the container — never in screens or stores.
 
 Use relative imports within the same feature:
 ```ts

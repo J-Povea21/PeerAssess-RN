@@ -75,7 +75,7 @@ Will add [Entity] tokens and bindings after existing registrations.
 ### Layer-by-Layer Build Order
 1. Domain layer (types + repository interface)
 2. Data layer (datasource interface + local/remote implementations + concrete repository)
-3. Presentation layer (context/provider + screens)
+3. Presentation layer (Zustand store + screens)
 4. DI wiring in tokens.ts and DIProvider.tsx
 ```
 
@@ -153,7 +153,7 @@ When reviewing code, check for these violations in order of severity:
 1. **Layer dependency violation** — Presentation importing directly from data layer (should go through domain interfaces)
 2. **Repository bypassed** — Context/screen calling a datasource directly instead of going through the repository
 3. **Missing abstraction** — Concrete class used where an interface should be (e.g., `CourseRemoteDataSourceImpl` instead of `CourseDataSource` in `RepositoryImpl` constructor)
-4. **Business logic in screen** — Complex logic in screen components that belongs in the context/provider
+4. **Business logic in screen** — Complex logic in screen components that belongs in the store
 5. **Framework leaking into domain** — Domain layer importing React, React Native, or HTTP packages (domain must be pure TypeScript)
 
 ### Convention Violations (inconsistent with PeerAssess RN codebase)
@@ -177,7 +177,7 @@ If no issues are found, say so explicitly. Don't invent problems.
 
 ### Proactive Flagging
 
-If a developer pastes code in conversation that has clean architecture issues, flag them even if they didn't explicitly ask for a review. Be helpful, not annoying — a brief note like "I noticed this context resolves the datasource token directly. In PeerAssess RN, contexts should depend on the repository interface. Want me to show you the fix?" is the right tone.
+If a developer pastes code in conversation that has clean architecture issues, flag them even if they didn't explicitly ask for a review. Be helpful, not annoying — a brief note like "I noticed the store is being initialized with the datasource instance instead of the repository. In PeerAssess RN, `use[Entity]Store.getState().init()` should receive the repository so the store depends on the domain interface, not the data layer. Want me to show you the fix?" is the right tone.
 
 ---
 
@@ -207,7 +207,7 @@ Examples:
 - `[abc123]: add domain types and repository interface`
 - `[abc123]: implement local and remote datasources`
 - `[abc123]: implement repository`
-- `[abc123]: add context provider and screens`
+- `[abc123]: add Zustand store and screens`
 - `[abc123]: wire DI tokens and provider`
 
 **Never add `Co-authored by Claude` or similar annotations to commits.**
