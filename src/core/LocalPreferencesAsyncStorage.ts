@@ -1,4 +1,4 @@
-
+/* eslint-disable no-console */
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ILocalPreferences } from './iLocalPreferences';
 
@@ -23,7 +23,7 @@ export class LocalPreferencesAsyncStorage implements ILocalPreferences {
             const jsonValue = JSON.stringify(value);
             await AsyncStorage.setItem(key, jsonValue);
         } catch (e) {
-            console.error(`Error storing data for ${key}`, e);
+            if (__DEV__) console.error(`Error storing data for ${key}`, e);
         }
     }
     async retrieveData<T>(key: string): Promise<T | null> {
@@ -31,7 +31,7 @@ export class LocalPreferencesAsyncStorage implements ILocalPreferences {
             const jsonValue = await AsyncStorage.getItem(key);
             return jsonValue ? JSON.parse(jsonValue) : null;
         } catch (e) {
-            console.error(`Error retrieving data for ${key}`, e);
+            if (__DEV__) console.error(`Error retrieving data for ${key}`, e);
             return null;
         }
     }
@@ -39,7 +39,7 @@ export class LocalPreferencesAsyncStorage implements ILocalPreferences {
         try {
             await AsyncStorage.removeItem(key);
         } catch (e) {
-            console.error(`Error removing data for ${key}`, e);
+            if (__DEV__) console.error(`Error removing data for ${key}`, e);
         }
     }
     async storeEntry<T>(key: string, entry: T): Promise<void> {
@@ -49,7 +49,7 @@ export class LocalPreferencesAsyncStorage implements ILocalPreferences {
             data.push(entry);
             await AsyncStorage.setItem(key, JSON.stringify(data));
         } catch (e) {
-            console.error(`Error storing entry for ${key}`, e);
+            if (__DEV__) console.error(`Error storing entry for ${key}`, e);
         }
     }
     async getAllEntries<T>(key: string): Promise<T[]> {
@@ -57,7 +57,7 @@ export class LocalPreferencesAsyncStorage implements ILocalPreferences {
             const jsonValue = await AsyncStorage.getItem(key);
             return jsonValue ? JSON.parse(jsonValue) : [];
         } catch (e) {
-            console.error(`Error reading entries for ${key}`, e);
+            if (__DEV__) console.error(`Error reading entries for ${key}`, e);
             return [];
         }
     }
@@ -65,11 +65,11 @@ export class LocalPreferencesAsyncStorage implements ILocalPreferences {
         try {
             await AsyncStorage.setItem(key, JSON.stringify(entries));
         } catch (e) {
-            console.error(`Error replacing entries for ${key}`, e);
+            if (__DEV__) console.error(`Error replacing entries for ${key}`, e);
         }
     }
-    clearAll(): Promise<void> {
-        throw new Error("Method not implemented.");
+    async clearAll(): Promise<void> {
+        await AsyncStorage.clear();
     }
 
 
