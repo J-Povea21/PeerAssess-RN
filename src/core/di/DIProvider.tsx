@@ -24,11 +24,6 @@ export function DIProvider({
   LocalPreferencesAsyncStorage.getInstance()
 );
 
-    c.register(
-      TOKENS.ExampleStore,
-      {}
-    );
-
     return c;
   }, []);
 
