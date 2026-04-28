@@ -37,8 +37,8 @@ src/features/[feature]/
 │   └── repositories/
 │       └── [Entity]RepositoryImpl.ts
 └── presentation/
-    ├── context/
-    │   └── [entity]Context.tsx
+    ├── store/
+    │   └── use[Entity]Store.ts            ← Zustand store + init hook
     └── screens/
         └── [Action][Entity]Screen.tsx     ← One file per screen
 ```
