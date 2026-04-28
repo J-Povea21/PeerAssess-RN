@@ -10,8 +10,9 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "test": "jest --watchAll",
-    "test:ci": "jest --ci",
-    "test:watch": "jest --watch"
+    "test:ci": "jest --ci --passWithNoTests",
+    "test:watch": "jest --watch",
+    "prepare": "husky"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
@@ -52,9 +53,11 @@
     "@testing-library/jest-native": "^5.4.3",
     "@testing-library/react-native": "^13.3.3",
     "@types/jest": "^30.0.0",
+    "@types/node": "^25.6.0",
     "@types/react": "~19.1.0",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
+    "husky": "^9.1.7",
     "jest-expo": "~54.0.17",
     "react-test-renderer": "19.1.0",
     "typescript": "~5.9.2"
@@ -68,5 +71,6 @@
       "jest"
     ]
   },
-  "private": true
+  "private": true,
+  "packageManager": "pnpm@10.32.1+sha512.a706938f0e89ac1456b6563eab4edf1d1faf3368d1191fc5c59790e96dc918e4456ab2e67d613de1043d2e8c81f87303e6b40d4ffeca9df15ef1ad567348f2be"
 }
