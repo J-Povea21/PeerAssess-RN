@@ -1,0 +1,15 @@
+#!/bin/sh
+commit_msg=$(cat "$1")
+
+# Skip merge commits
+case "$commit_msg" in
+  Merge*) exit 0 ;;
+esac
+
+if ! echo "$commit_msg" | grep -qE '^\[.+\]: .+'; then
+  echo ""
+  echo "  Bad commit message: \"$commit_msg\""
+  echo "  Expected format:    [task-id]: your message"
+  echo ""
+  exit 1
+fi
