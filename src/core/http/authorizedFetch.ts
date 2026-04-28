@@ -1,6 +1,17 @@
+const BASE_URL =
+  "https://roble-api.openlab.uninorte.edu.co";
+
+const ROBLE_TOKEN =
+  "peerassess_dbc886f908";
+
 let isRefreshing = false;
+<<<<<<< HEAD
 let refreshPromise: Promise<string | null> | null = null;
 const BASE_URL = "https://roble-api.openlab.uninorte.edu.co";
+=======
+let refreshPromise: Promise<string | null> | null =
+  null;
+>>>>>>> cde6f88 ([86b9kxbb1]: add bootstrap tooling and core infrastructure)
 
 type LogoutCallback = () => void;
 
@@ -38,7 +49,8 @@ export async function authorizedFetch(
     });
   }
 
-  const newAccessToken = await refreshPromise;
+  const newAccessToken =
+    await refreshPromise;
 
   if (!newAccessToken) {
     onLogout();
@@ -55,7 +67,9 @@ export async function authorizedFetch(
 
   if (retryResponse.status === 401) {
     onLogout();
-    throw new Error("session expired again");
+    throw new Error(
+      "session expired again"
+    );
   }
 
   return retryResponse;
@@ -67,16 +81,27 @@ async function refreshAccessToken(
   try {
     // TODO: confirm the exact Roble refresh endpoint when auth feature is implemented.
     const response = await fetch(
+<<<<<<< HEAD
       `${BASE_URL}/auth/refresh`,
+=======
+      `${BASE_URL}/auth/${ROBLE_TOKEN}/refresh-token`,
+>>>>>>> cde6f88 ([86b9kxbb1]: add bootstrap tooling and core infrastructure)
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${refreshToken}`,
+          "Content-Type":
+            "application/json",
         },
+        body: JSON.stringify({
+          refreshToken,
+        }),
       }
     );
 
-    if (!response.ok) {
+    if (
+      response.status !== 201 &&
+      !response.ok
+    ) {
       return null;
     }
 

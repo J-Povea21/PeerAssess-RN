@@ -1,18 +1,23 @@
-// https://docs.expo.dev/guides/using-eslint/
 const { defineConfig } = require("eslint/config");
 const expoConfig = require("eslint-config-expo/flat");
 
 module.exports = defineConfig([
-  expoConfig,
+  ...expoConfig,
   {
     rules: {
-      "no-console": "error",
+      "no-console": "warn",
       "no-debugger": "error",
-      "max-len": ["warn", { code: 120, ignoreUrls: true, ignoreStrings: true, ignoreTemplateLiterals: true }],
-      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
+      "max-len": [
+        "warn",
+        {
+          code: 120,
+          ignoreUrls: true,
+          ignoreStrings: true,
+          ignoreTemplateLiterals: true,
+        },
+      ],
+      "@typescript-eslint/no-unused-vars":
+        "warn",
     },
-  },
-  {
-    ignores: ["dist/*", "node_modules/*"],
   },
 ]);

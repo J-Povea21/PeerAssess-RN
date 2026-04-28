@@ -5,11 +5,12 @@ import React, {
   useMemo,
 } from "react";
 
-import { LocalPreferencesAsyncStorage } from "../LocalPreferencesAsyncStorage";
 import Container from "./container";
-import { TOKENS } from "./tokens";
+import TOKENS from "./tokens";
+import { LocalPreferencesAsyncStorage } from "../LocalPreferencesAsyncStorage";
 
-const DIContext = createContext<Container | null>(null);
+const DIContext =
+  createContext<Container | null>(null);
 
 export function DIProvider({
   children,
@@ -19,10 +20,10 @@ export function DIProvider({
   const container = useMemo(() => {
     const c = new Container();
 
-   c.register(
-  TOKENS.LocalPreferences,
-  LocalPreferencesAsyncStorage.getInstance()
-);
+    c.register(
+      TOKENS.LocalPreferences,
+      LocalPreferencesAsyncStorage.getInstance()
+    );
 
     return c;
   }, []);

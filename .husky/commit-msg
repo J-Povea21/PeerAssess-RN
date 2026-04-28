@@ -1,15 +1,13 @@
 #!/bin/sh
+
 commit_msg=$(cat "$1")
 
-# Skip merge commits
-case "$commit_msg" in
-  Merge*) exit 0 ;;
-esac
+if echo "$commit_msg" | grep -Eq "^Merge "; then
+  exit 0
+fi
 
-if ! echo "$commit_msg" | grep -qE '^\[.+\]: .+'; then
-  echo ""
-  echo "  Bad commit message: \"$commit_msg\""
-  echo "  Expected format:    [task-id]: your message"
-  echo ""
+if ! echo "$commit_msg" | grep -Eq "^\[[a-zA-Z0-9]+\]: .+"; then
+  echo "❌ Commit message must follow format:"
+  echo "[86b9kxbb1]: your message here"
   exit 1
 fi
