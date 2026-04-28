@@ -1,14 +1,20 @@
-import React from "react";
+import React, { useEffect } from "react";
 
+import SplashScreen from "@/src/features/auth/presentation/screens/SplashScreen";
+import { useAuthStore } from "@/src/features/auth/presentation/store/useAuthStore";
 import AuthStackNavigator from "./AuthStackNavigator";
 import StudentTabsNavigator from "./StudentTabsNavigator";
 
 export default function AppNavigator() {
-  const isAuthenticated = false;
+  const { user, isRestoringSession, restoreSession } = useAuthStore();
 
-  if (isAuthenticated) {
-    return <StudentTabsNavigator />;
+  useEffect(() => {
+    restoreSession();
+  }, [restoreSession]);
+
+  if (isRestoringSession) {
+    return <SplashScreen />;
   }
 
-  return <AuthStackNavigator />;
+  return user ? <StudentTabsNavigator /> : <AuthStackNavigator />;
 }
