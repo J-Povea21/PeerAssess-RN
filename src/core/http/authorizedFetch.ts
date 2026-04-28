@@ -1,5 +1,6 @@
 let isRefreshing = false;
 let refreshPromise: Promise<string | null> | null = null;
+const BASE_URL = "https://roble-api.openlab.uninorte.edu.co";
 
 type LogoutCallback = () => void;
 
@@ -13,11 +14,8 @@ export async function authorizedFetch(
   const response = await fetch(url, {
     ...options,
     headers: {
-      ...options.headers,
-      Authorization: accessToken
-        ? `Bearer ${accessToken}`
-        : "",
-      "Content-Type": "application/json",
+      ...(options.headers as Record<string, string>),
+      Authorization: accessToken ? `Bearer ${accessToken}` : "",
     },
   });
 
@@ -50,9 +48,8 @@ export async function authorizedFetch(
   const retryResponse = await fetch(url, {
     ...options,
     headers: {
-      ...options.headers,
+      ...(options.headers as Record<string, string>),
       Authorization: `Bearer ${newAccessToken}`,
-      "Content-Type": "application/json",
     },
   });
 
@@ -68,8 +65,9 @@ async function refreshAccessToken(
   refreshToken: string
 ): Promise<string | null> {
   try {
+    // TODO: confirm the exact Roble refresh endpoint when auth feature is implemented.
     const response = await fetch(
-      "/auth/refresh",
+      `${BASE_URL}/auth/refresh`,
       {
         method: "POST",
         headers: {
