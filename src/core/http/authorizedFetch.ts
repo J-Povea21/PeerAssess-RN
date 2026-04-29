@@ -1,88 +1,88 @@
+import { LocalPreferencesAsyncStorage } from "@/src/core/LocalPreferencesAsyncStorage";
+import { STORAGE_KEYS } from "@/src/core/constants/storageKeys";
+import { ROBLE_BASE_URL } from "@/src/core/constants/robleConfig";
+import { useSessionStore } from "@/src/core/session/sessionStore";
+
+const AUTH_BASE = `${ROBLE_BASE_URL}/auth/${process.env.EXPO_PUBLIC_ROBLE_PROJECT_ID}`;
+
 let isRefreshing = false;
 let refreshPromise: Promise<string | null> | null = null;
-const BASE_URL = "https://roble-api.openlab.uninorte.edu.co";
-
-type LogoutCallback = () => void;
 
 export async function authorizedFetch(
   url: string,
-  options: RequestInit = {},
-  accessToken: string | null,
-  refreshToken: string | null,
-  onLogout: LogoutCallback
-) {
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      ...(options.headers as Record<string, string>),
-      Authorization: accessToken ? `Bearer ${accessToken}` : "",
-    },
-  });
+  options: RequestInit = {}
+): Promise<Response> {
+  const { accessToken } = useSessionStore.getState();
 
-  if (response.status !== 401) {
-    return response;
+  const headers: Record<string, string> = {
+    ...(options.headers as Record<string, string>),
+  };
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
   }
 
-  if (!refreshToken) {
-    onLogout();
-    throw new Error("session expired");
-  }
+  const response = await fetch(url, { ...options, headers });
+
+  if (response.status !== 401) return response;
 
   if (!isRefreshing) {
     isRefreshing = true;
-
-    refreshPromise = refreshAccessToken(
-      refreshToken
-    ).finally(() => {
+    refreshPromise = refreshAccessToken().finally(() => {
       isRefreshing = false;
+      refreshPromise = null;
     });
   }
 
-  const newAccessToken = await refreshPromise;
+  // Capture reference before any microtask boundary so concurrent callers
+  // all await the same in-flight promise even after finally nulls the module var
+  const pendingRefresh = refreshPromise!;
+  const newToken = await pendingRefresh;
 
-  if (!newAccessToken) {
-    onLogout();
-    throw new Error("refresh failed");
+  if (!newToken) {
+    useSessionStore.getState().clearTokens();
+    throw new Error("Tu sesión ha expirado");
   }
 
-  const retryResponse = await fetch(url, {
-    ...options,
-    headers: {
-      ...(options.headers as Record<string, string>),
-      Authorization: `Bearer ${newAccessToken}`,
-    },
-  });
+  const retryHeaders: Record<string, string> = {
+    ...(options.headers as Record<string, string>),
+    Authorization: `Bearer ${newToken}`,
+  };
+
+  const retryResponse = await fetch(url, { ...options, headers: retryHeaders });
 
   if (retryResponse.status === 401) {
-    onLogout();
-    throw new Error("session expired again");
+    useSessionStore.getState().clearTokens();
+    throw new Error("Tu sesión ha expirado");
   }
 
   return retryResponse;
 }
 
-async function refreshAccessToken(
-  refreshToken: string
-): Promise<string | null> {
+async function refreshAccessToken(): Promise<string | null> {
+  const { refreshToken } = useSessionStore.getState();
+  if (!refreshToken) return null;
+
   try {
-    // TODO: confirm the exact Roble refresh endpoint when auth feature is implemented.
-    const response = await fetch(
-      `${BASE_URL}/auth/refresh`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${refreshToken}`,
-        },
-      }
-    );
+    const response = await fetch(`${AUTH_BASE}/refresh-token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+    });
 
-    if (!response.ok) {
-      return null;
-    }
+    if (response.status !== 201) return null;
 
-    const data = await response.json();
+    const data = (await response.json()) as {
+      accessToken: string;
+      refreshToken: string;
+    };
 
-    return data.accessToken ?? null;
+    useSessionStore.getState().setTokens(data.accessToken, data.refreshToken);
+
+    const prefs = LocalPreferencesAsyncStorage.getInstance();
+    await prefs.storeData(STORAGE_KEYS.ACCESS_TOKEN, data.accessToken);
+    await prefs.storeData(STORAGE_KEYS.REFRESH_TOKEN, data.refreshToken);
+
+    return data.accessToken;
   } catch {
     return null;
   }
