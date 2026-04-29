@@ -37,9 +37,9 @@ export class AuthRemoteDataSourceImpl implements AuthDataSource {
 
     if (response.status !== 201) {
       const body = await response.json().catch(() => ({}));
-      throw new Error(
-        (body as { message?: string }).message ?? "Credenciales inválidas"
-      );
+      // eslint-disable-next-line no-console
+      if (__DEV__) console.warn("AuthRemoteDataSource.login failed:", body);
+      throw new Error("Credenciales inválidas");
     }
 
     const { accessToken, refreshToken, user } =
