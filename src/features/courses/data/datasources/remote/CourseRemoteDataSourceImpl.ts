@@ -15,6 +15,7 @@ export class CourseRemoteDataSourceImpl implements CourseDataSource {
       studentID: studentId,
     });
 
+    // TODO: 4 parallel requests per enrollment — batch when Roble supports multi-ID reads
     const courses = await Promise.all(
       enrollments.map(async (enrollment) => {
         const [courseRows, studentRows, categoryRows, evaluationRows] = await Promise.all([
@@ -35,7 +36,7 @@ export class CourseRemoteDataSourceImpl implements CourseDataSource {
           studentCount: studentRows.length,
           categoryCount: categoryRows.length,
           evaluationCount: evaluationRows.length,
-          pendingEvaluations: 0,
+          pendingEvaluations: 0, // TODO: compute from assessments table when evaluations feature ships
           enrollmentCode: row.accessCode,
         };
         return course;
@@ -82,7 +83,7 @@ export class CourseRemoteDataSourceImpl implements CourseDataSource {
       studentCount: studentRows.length,
       categoryCount: categoryRows.length,
       evaluationCount: evaluationRows.length,
-      pendingEvaluations: 0,
+      pendingEvaluations: 0, // TODO: compute from assessments table when evaluations feature ships
       enrollmentCode: row.accessCode,
     };
   }
