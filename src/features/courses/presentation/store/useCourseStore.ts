@@ -9,6 +9,7 @@ type CourseState = {
   error: string | null;
   _repo: CourseRepository | null;
   _cachedStudentId: string | null;
+  _isFetched: boolean;
   init: (repo: CourseRepository) => void;
   fetchCoursesByStudent: (studentId: string) => Promise<void>;
   joinCourse: (accessCode: string, studentId: string) => Promise<void>;
@@ -21,18 +22,19 @@ export const useCourseStore = create<CourseState>((set, get) => ({
   error: null,
   _repo: null,
   _cachedStudentId: null,
+  _isFetched: false,
 
   init: (repo) => set({ _repo: repo }),
 
   fetchCoursesByStudent: async (studentId) => {
-    const { _repo, _cachedStudentId, courses } = get();
+    const { _repo, _cachedStudentId, _isFetched } = get();
     if (!_repo) throw new Error("CourseStore not initialized");
-    if (_cachedStudentId === studentId && courses.length > 0) return;
+    if (_cachedStudentId === studentId && _isFetched) return;
 
     set({ isLoading: true, error: null });
     try {
       const fetched = await _repo.getCoursesByStudent(studentId);
-      set({ courses: fetched, _cachedStudentId: studentId });
+      set({ courses: fetched, _cachedStudentId: studentId, _isFetched: true });
     } catch (e) {
       set({ error: (e as Error).message });
     } finally {
@@ -47,9 +49,9 @@ export const useCourseStore = create<CourseState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       await _repo.joinCourse(accessCode, studentId);
-      set({ _cachedStudentId: null });
+      set({ _cachedStudentId: null, _isFetched: false });
       const fetched = await _repo.getCoursesByStudent(studentId);
-      set({ courses: fetched, _cachedStudentId: studentId });
+      set({ courses: fetched, _cachedStudentId: studentId, _isFetched: true });
     } catch (e) {
       set({ error: (e as Error).message });
     } finally {

@@ -25,6 +25,7 @@ beforeEach(() => {
     error: null,
     _repo: null,
     _cachedStudentId: null,
+    _isFetched: false,
   });
   jest.clearAllMocks();
 });
@@ -67,6 +68,16 @@ test("joinCourse invalidates cache and refreshes the course list", async () => {
 
   expect(mockRepo.joinCourse).toHaveBeenCalledWith("CODE1", "student-1");
   expect(mockRepo.getCoursesByStudent).toHaveBeenCalledTimes(1);
+});
+
+test("fetchCoursesByStudent does not re-fetch when student has zero courses but already fetched", async () => {
+  (mockRepo.getCoursesByStudent as jest.Mock).mockResolvedValue([]);
+  useCourseStore.getState().init(mockRepo);
+  await useCourseStore.getState().fetchCoursesByStudent("student-1");
+  await useCourseStore.getState().fetchCoursesByStudent("student-1");
+
+  expect(mockRepo.getCoursesByStudent).toHaveBeenCalledTimes(1);
+  expect(useCourseStore.getState().courses).toEqual([]);
 });
 
 test("joinCourse sets error state on failure", async () => {
