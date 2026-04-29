@@ -129,6 +129,7 @@ export default function LoginScreen() {
           visible={!!error}
           onDismiss={clearError}
           duration={4000}
+          style={styles.snackbar}
         >
           {error ?? ""}
         </Snackbar>
@@ -189,5 +190,8 @@ const styles = StyleSheet.create({
     color: AppColors.textMuted,
     textAlign: "center",
     marginTop: 40,
+  },
+  snackbar: {
+    backgroundColor: AppColors.rose,
   },
 });
