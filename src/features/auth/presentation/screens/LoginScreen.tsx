@@ -10,7 +10,7 @@ import {
 import {
   ActivityIndicator,
   Button,
-  HelperText,
+  Snackbar,
   Text,
   TextInput,
 } from "react-native-paper";
@@ -102,12 +102,6 @@ export default function LoginScreen() {
                 }
               />
 
-              {error ? (
-                <HelperText type="error" visible style={styles.errorText}>
-                  {error}
-                </HelperText>
-              ) : null}
-
               {isLoading ? (
                 <ActivityIndicator style={styles.loader} color={AppColors.olive} />
               ) : (
@@ -130,6 +124,14 @@ export default function LoginScreen() {
             <Text style={styles.footer}>Autenticación segura via Roble</Text>
           </ScrollView>
         </KeyboardAvoidingView>
+
+        <Snackbar
+          visible={!!error}
+          onDismiss={clearError}
+          duration={4000}
+        >
+          {error ?? ""}
+        </Snackbar>
       </SafeAreaView>
     </LinearGradient>
   );
@@ -168,9 +170,6 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: "rgba(255, 255, 255, 0.70)",
     borderRadius: 12,
-  },
-  errorText: {
-    marginTop: -8,
   },
   loader: {
     marginTop: 8,
