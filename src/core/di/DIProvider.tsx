@@ -22,7 +22,7 @@ export function DIProvider({
   const container = useMemo(() => {
     const c = new Container();
 
-    const authDS = process.env.EXPO_PUBLIC_USE_LOCAL_AUTH === "true"
+    const authDS = __DEV__ && process.env.EXPO_PUBLIC_USE_LOCAL_AUTH === "true"
       ? new AuthLocalDataSourceImpl()
       : new AuthRemoteDataSourceImpl();
     const authRepo = new AuthRepositoryImpl(authDS);
