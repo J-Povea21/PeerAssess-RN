@@ -9,6 +9,7 @@ import { useAuthStore } from "@/src/features/auth/presentation/store/useAuthStor
 import CourseCard from "@/src/features/courses/presentation/components/CourseCard";
 import PendingBanner from "@/src/features/courses/presentation/components/PendingBanner";
 import { useCourseStore } from "@/src/features/courses/presentation/store/useCourseStore";
+import LogoBox from "@/src/core/components/LogoBox";
 import { AppColors } from "@/src/theme/appColors";
 
 const BG_COLORS = [AppColors.beige, "#FFFFFF", AppColors.rose + "0D"] as const;
@@ -96,14 +97,12 @@ export default function StudentHomeScreen({ navigation }: { navigation: any }) {
           RESULTADOS RECIENTES
         </Text>
 
-        <View style={styles.emptyState}>
-          <MaterialCommunityIcons
-            name="chart-bar"
-            size={48}
-            color={AppColors.textMuted}
-            style={styles.emptyIcon}
-          />
-          <Text style={styles.emptyText}>No hay resultados recientes</Text>
+        <View style={styles.noResultsCard}>
+          <LogoBox size={64} style={styles.noResultsLogo} />
+          <Text style={styles.noResultsTitle}>No hay resultados recientes</Text>
+          <Text style={styles.noResultsSubtitle}>
+            Aquí aparecerán tus calificaciones cuando{"\n"}se publiquen los resultados
+          </Text>
         </View>
       </ScrollView>
 
@@ -181,6 +180,33 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: AppColors.textMuted,
     marginTop: 12,
+    textAlign: "center",
+  },
+  noResultsCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    paddingVertical: 32,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  noResultsLogo: {
+    opacity: 0.35,
+    marginBottom: 16,
+  },
+  noResultsTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: AppColors.textMuted,
+  },
+  noResultsSubtitle: {
+    fontSize: 13,
+    color: AppColors.textMuted,
+    marginTop: 4,
     textAlign: "center",
   },
   fab: {
