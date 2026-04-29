@@ -1,3 +1,4 @@
 export const TOKENS = {
-  LocalPreferences: Symbol("LocalPreferences"),
+  AuthRemoteDS: Symbol("AuthRemoteDS"),
+  AuthRepo: Symbol("AuthRepo"),
 } as const;

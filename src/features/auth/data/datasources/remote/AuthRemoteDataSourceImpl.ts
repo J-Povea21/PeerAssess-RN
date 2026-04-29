@@ -62,12 +62,7 @@ export class AuthRemoteDataSourceImpl implements AuthDataSource {
   }
 
   async logout(): Promise<void> {
-    const { accessToken } = useSessionStore.getState();
-
-    await fetch(`${AUTH_BASE}/logout`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${accessToken ?? ""}` },
-    }).catch(() => {});
+    await authorizedFetch(`${AUTH_BASE}/logout`, { method: "POST" }).catch(() => {});
 
     useSessionStore.getState().clearTokens();
     await this._clearStorage();
