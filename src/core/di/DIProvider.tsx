@@ -5,6 +5,7 @@ import React, {
   useMemo,
 } from "react";
 
+import { AuthLocalDataSourceImpl } from "@/src/features/auth/data/datasources/local/AuthLocalDataSourceImpl";
 import { AuthRemoteDataSourceImpl } from "@/src/features/auth/data/datasources/remote/AuthRemoteDataSourceImpl";
 import { AuthRepositoryImpl } from "@/src/features/auth/data/repositories/AuthRepositoryImpl";
 import { useAuthStore } from "@/src/features/auth/presentation/store/useAuthStore";
@@ -21,7 +22,9 @@ export function DIProvider({
   const container = useMemo(() => {
     const c = new Container();
 
-    const authDS = new AuthRemoteDataSourceImpl();
+    const authDS = process.env.EXPO_PUBLIC_USE_LOCAL_AUTH === "true"
+      ? new AuthLocalDataSourceImpl()
+      : new AuthRemoteDataSourceImpl();
     const authRepo = new AuthRepositoryImpl(authDS);
     c.register(TOKENS.AuthRemoteDS, authDS)
      .register(TOKENS.AuthRepo, authRepo);
