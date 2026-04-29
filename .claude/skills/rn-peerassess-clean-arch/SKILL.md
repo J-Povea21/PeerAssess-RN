@@ -1,7 +1,7 @@
 ---
 name: rn-peerassess-clean-arch
 description: >
-  PeerAssess React Native/TypeScript clean architecture assistant. (1) CRUD Module Builder — scaffolds feature modules incrementally (domain → data → presentation, React Context, repository pattern, TypeScript interfaces), presents a plan first, builds layer-by-layer with user approval, wires DI in DIProvider.tsx. (2) Architecture Reviewer — detects clean architecture violations, flags convention issues, suggests fixes with explanations. Use when: user mentions PeerAssess RN, asks to create/scaffold a module or feature, review code for clean arch compliance, mentions React Native module structure or layer dependencies, wants a new CRUD entity, pastes TypeScript code with possible violations, says "review my module", "create a feature for X", or asks about PeerAssess git branch conventions, PR workflow, or contributing guidelines.
+  PeerAssess React Native/TypeScript clean architecture assistant. (1) CRUD Module Builder — scaffolds feature modules incrementally (domain → data → presentation, Zustand stores, repository pattern, TypeScript interfaces), presents a plan first, builds layer-by-layer with user approval, wires DI in DIProvider.tsx. (2) Architecture Reviewer — detects clean architecture violations, flags convention issues, suggests fixes with explanations. Use when: user mentions PeerAssess RN, asks to create/scaffold a module or feature, review code for clean arch compliance, mentions React Native module structure or layer dependencies, wants a new CRUD entity, pastes TypeScript code with possible violations, says "review my module", "create a feature for X", or asks about PeerAssess git branch conventions, PR workflow, or contributing guidelines.
 ---
 
 # PeerAssess — React Native Clean Architecture Assistant
@@ -64,8 +64,8 @@ src/features/[entity]/
 │   └── repositories/
 │       └── [Entity]RepositoryImpl.ts            ← Concrete repository
 └── presentation/
-    ├── context/
-    │   └── [entity]Context.tsx                  ← Context + Provider + use[Entity] hook
+    ├── store/
+    │   └── use[Entity]Store.ts                  ← Zustand store + init hook
     └── screens/
         └── [Action][Entity]Screen.tsx           ← One file per screen (depends on design)
 
@@ -75,7 +75,7 @@ Will add [Entity] tokens and bindings after existing registrations.
 ### Layer-by-Layer Build Order
 1. Domain layer (types + repository interface)
 2. Data layer (datasource interface + local/remote implementations + concrete repository)
-3. Presentation layer (context/provider + screens)
+3. Presentation layer (Zustand store + screens)
 4. DI wiring in tokens.ts and DIProvider.tsx
 ```
 
@@ -100,12 +100,12 @@ Generate the abstract datasource interface (at the `datasources/` root), the loc
 
 ### Step 4: Build the Presentation Layer
 
-Generate the Context/Provider first. Then **ask the developer what screens they need** for this feature — don't assume a fixed set. Each screen the developer describes gets its own file in `screens/`, following the conventions in the patterns reference.
+Generate the Zustand store first. Then **ask the developer what screens they need** for this feature — don't assume a fixed set. Each screen the developer describes gets its own file in `screens/`, following the conventions in the patterns reference.
 
 After writing:
 
 - Show summary of files created
-- Explain how the context wraps the repository and how screens consume it via the hook
+- Explain how the store holds the repository reference (injected at bootstrap via `init`) and how screens consume state directly via the store hook
 - Ask: **"Presentation layer is ready. Want me to wire up the dependency injection?"**
 
 ### Step 5: Wire DI in tokens.ts and DIProvider.tsx
@@ -125,7 +125,7 @@ c.register(TOKENS.[Entity]RemoteDS, [entity]DS)
  .register(TOKENS.[Entity]Repo, [entity]Repo);
 ```
 
-After updating, show the user exactly what was added and where. Confirm: **"Module is fully wired. Wrap your screen tree with `<[Entity]Provider>` and use `use[Entity]()` inside screens. Want me to review the whole module for any issues?"**
+After updating, show the user exactly what was added and where. Confirm: **"Module is fully wired. The store is initialized at bootstrap — call `use[Entity]Store()` directly in any screen without wrapping. Want me to review the whole module for any issues?"**
 
 ### Important Rules for Code Generation
 
@@ -136,7 +136,7 @@ After updating, show the user exactly what was added and where. Confirm: **"Modu
 - Concrete remote implementation: `[Entity]RemoteDataSourceImpl.ts` inside `datasources/remote/`.
 - Concrete local implementation: `[Entity]LocalDataSourceImpl.ts` inside `datasources/local/`.
 - Concrete repositories use `Impl` suffix: `[Entity]RepositoryImpl.ts`.
-- Contexts: export `[Entity]Context`, `[Entity]Provider`, `use[Entity]()` from the same file.
+- Stores: export `use[Entity]Store` as a named export from a single file (`use[Entity]Store.ts`). No provider wrapping needed — the store is initialized by `DIProvider` via `use[Entity]Store.getState().init(repo)`.
 - Entities are plain TypeScript `type` objects — no class, no `fromJson/toJson`; parsing happens in the datasource implementation.
 - Use `NewEntity = Omit<Entity, '_id'>` for creation payloads.
 - Screens are functional components, named `[Action][Entity]Screen.tsx`.
@@ -153,7 +153,7 @@ When reviewing code, check for these violations in order of severity:
 1. **Layer dependency violation** — Presentation importing directly from data layer (should go through domain interfaces)
 2. **Repository bypassed** — Context/screen calling a datasource directly instead of going through the repository
 3. **Missing abstraction** — Concrete class used where an interface should be (e.g., `CourseRemoteDataSourceImpl` instead of `CourseDataSource` in `RepositoryImpl` constructor)
-4. **Business logic in screen** — Complex logic in screen components that belongs in the context/provider
+4. **Business logic in screen** — Complex logic in screen components that belongs in the store
 5. **Framework leaking into domain** — Domain layer importing React, React Native, or HTTP packages (domain must be pure TypeScript)
 
 ### Convention Violations (inconsistent with PeerAssess RN codebase)
@@ -162,7 +162,7 @@ When reviewing code, check for these violations in order of severity:
 3. **Entity as class** — Using a `class` instead of a TypeScript `type` for domain entities
 4. **Serialization in entity** — `fromJson`/`toJson` on the entity type instead of in the datasource
 5. **Missing token** — New repository registered in DIProvider without a corresponding `TOKENS` entry
-6. **Context resolving datasource directly** — Context should resolve via `TOKENS.[Entity]Repo`, not `TOKENS.[Entity]RemoteDS`
+6. **Store initialized with wrong token** — `DIProvider` must call `use[Entity]Store.getState().init(repo)` with the **repository** instance, not the datasource. The store's `_repo` field must be typed as the domain repository interface.
 7. **Unguarded console output** — `console.log`, `console.warn`, or `console.error` outside `if (__DEV__)` guard in production paths
 8. **Inconsistent datasource structure** — Remote and local sources must each live in their own subfolder under `datasources/`, with the abstract interface at the `datasources/` root
 
@@ -177,7 +177,7 @@ If no issues are found, say so explicitly. Don't invent problems.
 
 ### Proactive Flagging
 
-If a developer pastes code in conversation that has clean architecture issues, flag them even if they didn't explicitly ask for a review. Be helpful, not annoying — a brief note like "I noticed this context resolves the datasource token directly. In PeerAssess RN, contexts should depend on the repository interface. Want me to show you the fix?" is the right tone.
+If a developer pastes code in conversation that has clean architecture issues, flag them even if they didn't explicitly ask for a review. Be helpful, not annoying — a brief note like "I noticed the store is being initialized with the datasource instance instead of the repository. In PeerAssess RN, `use[Entity]Store.getState().init()` should receive the repository so the store depends on the domain interface, not the data layer. Want me to show you the fix?" is the right tone.
 
 ---
 
@@ -207,7 +207,7 @@ Examples:
 - `[abc123]: add domain types and repository interface`
 - `[abc123]: implement local and remote datasources`
 - `[abc123]: implement repository`
-- `[abc123]: add context provider and screens`
+- `[abc123]: add Zustand store and screens`
 - `[abc123]: wire DI tokens and provider`
 
 **Never add `Co-authored by Claude` or similar annotations to commits.**

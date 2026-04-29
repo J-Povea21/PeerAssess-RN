@@ -5,7 +5,10 @@ import React, {
   useMemo,
 } from "react";
 
-import { LocalPreferencesAsyncStorage } from "../LocalPreferencesAsyncStorage";
+import { AuthLocalDataSourceImpl } from "@/src/features/auth/data/datasources/local/AuthLocalDataSourceImpl";
+import { AuthRemoteDataSourceImpl } from "@/src/features/auth/data/datasources/remote/AuthRemoteDataSourceImpl";
+import { AuthRepositoryImpl } from "@/src/features/auth/data/repositories/AuthRepositoryImpl";
+import { useAuthStore } from "@/src/features/auth/presentation/store/useAuthStore";
 import Container from "./container";
 import { TOKENS } from "./tokens";
 
@@ -19,10 +22,14 @@ export function DIProvider({
   const container = useMemo(() => {
     const c = new Container();
 
-   c.register(
-  TOKENS.LocalPreferences,
-  LocalPreferencesAsyncStorage.getInstance()
-);
+    const authDS = __DEV__ && process.env.EXPO_PUBLIC_USE_LOCAL_AUTH === "true"
+      ? new AuthLocalDataSourceImpl()
+      : new AuthRemoteDataSourceImpl();
+    const authRepo = new AuthRepositoryImpl(authDS);
+    c.register(TOKENS.AuthRemoteDS, authDS)
+     .register(TOKENS.AuthRepo, authRepo);
+
+    useAuthStore.getState().init(authRepo);
 
     return c;
   }, []);
