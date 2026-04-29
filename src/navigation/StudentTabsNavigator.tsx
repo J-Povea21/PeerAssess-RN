@@ -5,6 +5,7 @@ import { Text } from "react-native-paper";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 
 import { AppColors } from "@/src/theme/appColors";
+import HomeStackNavigator from "./HomeStackNavigator";
 import CoursesStackNavigator from "./CoursesStackNavigator";
 
 const Tab = createBottomTabNavigator();
@@ -67,7 +68,7 @@ export default function StudentTabsNavigator() {
     >
       <Tab.Screen
         name="Dashboard"
-        component={CoursesStackNavigator}
+        component={HomeStackNavigator}
         options={{ tabBarLabel: "Inicio" }}
       />
       <Tab.Screen
