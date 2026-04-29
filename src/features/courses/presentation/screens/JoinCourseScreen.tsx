@@ -19,6 +19,7 @@ const BG_COLORS = [AppColors.beige, "#FFFFFF", AppColors.rose + "0D"] as const;
 export default function JoinCourseScreen({ navigation }: { navigation: any }) {
   const [code, setCode] = useState("");
   const [isJoining, setIsJoining] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const { user } = useAuthStore();
   const { joinCourse, error, clearError } = useCourseStore();
 
@@ -30,9 +31,8 @@ export default function JoinCourseScreen({ navigation }: { navigation: any }) {
     await joinCourse(trimmed, user.id);
     setIsJoining(false);
 
-    // goBack only if no error — error is shown via Snackbar
     if (!useCourseStore.getState().error) {
-      navigation.goBack();
+      setShowSuccess(true);
     }
   };
 
@@ -81,10 +81,19 @@ export default function JoinCourseScreen({ navigation }: { navigation: any }) {
       </View>
 
       <Snackbar
+        visible={showSuccess}
+        onDismiss={() => navigation.goBack()}
+        duration={1500}
+        style={styles.snackbarSuccess}
+      >
+        ¡Te uniste al curso exitosamente!
+      </Snackbar>
+
+      <Snackbar
         visible={!!error}
         onDismiss={clearError}
         duration={3000}
-        style={styles.snackbar}
+        style={styles.snackbarError}
       >
         {error}
       </Snackbar>
@@ -151,7 +160,10 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     elevation: 0,
   },
-  snackbar: {
+  snackbarSuccess: {
+    backgroundColor: AppColors.olive,
+  },
+  snackbarError: {
     backgroundColor: AppColors.rose,
   },
 });

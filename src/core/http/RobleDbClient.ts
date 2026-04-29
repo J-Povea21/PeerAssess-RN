@@ -24,7 +24,12 @@ export class RobleDbClient {
     const params = new URLSearchParams({ tableName, ...filters });
     const response = await this.fetchFn(`${BASE_URL}/read?${params}`);
 
-    if (!response.ok) throw new Error(`readTable failed: ${response.status}`);
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(
+        `readTable failed: ${response.status} — ${(body as { message?: string }).message ?? JSON.stringify(body)}`
+      );
+    }
 
     const decoded: unknown = await response.json();
 
@@ -45,14 +50,25 @@ export class RobleDbClient {
     tableName: string,
     record: Record<string, unknown>
   ): Promise<void> {
+    const requestBody = { tableName, records: [record] };
+    if (__DEV__) {
+      // eslint-disable-next-line no-console
+      console.log("[RobleDbClient] insertRecord →", JSON.stringify(requestBody));
+    }
     const response = await this.fetchFn(`${BASE_URL}/insert`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tableName, records: [record] }),
+      body: JSON.stringify(requestBody),
     });
 
+    const responseBody = await response.json().catch(() => ({}));
+    if (__DEV__) {
+      // eslint-disable-next-line no-console
+      console.log("[RobleDbClient] insertRecord ←", response.status, JSON.stringify(responseBody));
+    }
+
     if (response.status !== 200 && response.status !== 201) {
-      const body = await response.json().catch(() => ({}));
+      const body = responseBody;
       throw new Error(
         `insertRecord failed: ${response.status} — ${(body as { message?: string }).message ?? "Unknown"}`
       );

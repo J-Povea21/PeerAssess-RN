@@ -3,6 +3,11 @@ import { RobleDbClient } from "@/src/core/http/RobleDbClient";
 import { Course, CourseStatus } from "../../../domain/entities/Course";
 import { CourseDataSource } from "../CourseDataSource";
 
+const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+function generateId(length = 12): string {
+  return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+}
+
 type CourseEnrollmentRow = { _id: string; courseID: string; studentID: string };
 type CourseRow = { _id: string; name: string; semester: string; accessCode?: string; status?: string };
 type CountRow = { _id: string };
@@ -15,14 +20,14 @@ export class CourseRemoteDataSourceImpl implements CourseDataSource {
       studentID: studentId,
     });
 
-    // TODO: 4 parallel requests per enrollment — batch when Roble supports multi-ID reads
+    // TODO: 3 parallel requests per enrollment — batch when Roble supports multi-ID reads
     const courses = await Promise.all(
       enrollments.map(async (enrollment) => {
-        const [courseRows, studentRows, categoryRows, evaluationRows] = await Promise.all([
+        const [courseRows, studentRows, categoryRows] = await Promise.all([
           db.readTable<CourseRow>("Courses", { _id: enrollment.courseID }),
           db.readTable<CountRow>("CourseEnrollments", { courseID: enrollment.courseID }),
           db.readTable<CountRow>("GroupCategories", { courseID: enrollment.courseID }),
-          db.readTable<CountRow>("assessments", { course_id: enrollment.courseID }),
+          // Assessments are linked via categoryID, not courseID — evaluationCount deferred
         ]);
 
         if (courseRows.length === 0) return null;
@@ -35,7 +40,7 @@ export class CourseRemoteDataSourceImpl implements CourseDataSource {
           status: (row.status ?? "active") as CourseStatus,
           studentCount: studentRows.length,
           categoryCount: categoryRows.length,
-          evaluationCount: evaluationRows.length,
+          evaluationCount: 0, // TODO: query via GroupCategories → Assessments when evaluations feature ships
           pendingEvaluations: 0, // TODO: compute from assessments table when evaluations feature ships
           enrollmentCode: row.accessCode,
         };
@@ -65,14 +70,16 @@ export class CourseRemoteDataSourceImpl implements CourseDataSource {
     }
 
     await db.insertRecord("CourseEnrollments", {
+      _id: generateId(),
       courseID: row._id,
       studentID: studentId,
+      joinedAt: new Date().toISOString(),
     });
 
-    const [studentRows, categoryRows, evaluationRows] = await Promise.all([
+    const [studentRows, categoryRows] = await Promise.all([
       db.readTable<CountRow>("CourseEnrollments", { courseID: row._id }),
       db.readTable<CountRow>("GroupCategories", { courseID: row._id }),
-      db.readTable<CountRow>("assessments", { course_id: row._id }),
+      // Assessments are linked via categoryID, not courseID — evaluationCount deferred
     ]);
 
     return {
@@ -82,7 +89,7 @@ export class CourseRemoteDataSourceImpl implements CourseDataSource {
       status: (row.status ?? "active") as CourseStatus,
       studentCount: studentRows.length,
       categoryCount: categoryRows.length,
-      evaluationCount: evaluationRows.length,
+      evaluationCount: 0, // TODO: query via GroupCategories → Assessments when evaluations feature ships
       pendingEvaluations: 0, // TODO: compute from assessments table when evaluations feature ships
       enrollmentCode: row.accessCode,
     };
