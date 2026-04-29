@@ -2,6 +2,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ActivityIndicator, FAB, Text } from "react-native-paper";
 
 import { useAuthStore } from "@/src/features/auth/presentation/store/useAuthStore";
@@ -13,6 +14,7 @@ import { useCourseStore } from "../store/useCourseStore";
 const BG_COLORS = [AppColors.beige, "#FFFFFF", AppColors.rose + "0D"] as const;
 
 export default function CourseListScreen({ navigation }: { navigation: any }) {
+  const insets = useSafeAreaInsets();
   const { user } = useAuthStore();
   const { courses, isLoading, fetchCoursesByStudent } = useCourseStore();
 
@@ -43,7 +45,7 @@ export default function CourseListScreen({ navigation }: { navigation: any }) {
   return (
     <LinearGradient colors={BG_COLORS} style={styles.container}>
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + 20 }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Header: greeting + initials avatar */}
@@ -109,7 +111,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   content: {
-    padding: 20,
+    paddingHorizontal: 20,
     paddingBottom: 88,
   },
   header: {
@@ -117,7 +119,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 24,
-    marginTop: 16,
   },
   greeting: {
     fontSize: 14,
