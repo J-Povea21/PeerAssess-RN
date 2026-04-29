@@ -7,6 +7,7 @@ import { ActivityIndicator, FAB, Text } from "react-native-paper";
 
 import { useAuthStore } from "@/src/features/auth/presentation/store/useAuthStore";
 import CourseCard from "@/src/features/courses/presentation/components/CourseCard";
+import PendingBanner from "@/src/features/courses/presentation/components/PendingBanner";
 import { useCourseStore } from "@/src/features/courses/presentation/store/useCourseStore";
 import { AppColors } from "@/src/theme/appColors";
 
@@ -58,8 +59,11 @@ export default function StudentHomeScreen({ navigation }: { navigation: any }) {
           </View>
         </View>
 
+        {/* Pending evaluation alert banner */}
+        {pendingCourses.length > 0 && <PendingBanner course={pendingCourses[0]} />}
+
         {/* Pending evaluations section */}
-        <Text style={styles.sectionLabel}>EVALUACIONES PENDIENTES</Text>
+        <Text style={styles.sectionLabel}>CURSOS CON EVALUACIONES PENDIENTES</Text>
 
         {pendingCourses.length === 0 ? (
           <View style={styles.emptyState}>
