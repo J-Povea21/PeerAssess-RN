@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__clickup__clickup_get_task",
+      "Bash(npx tsc *)",
+      "Bash(node ./node_modules/typescript/bin/tsc --noEmit)",
+      "Bash(npx --no-install tsc --noEmit)",
+      "Bash(npm run *)"
+    ]
+  }
+}

@@ -4,6 +4,7 @@ import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 
+import ProfileScreen from "@/src/features/auth/presentation/screens/ProfileScreen";
 import { AppColors } from "@/src/theme/appColors";
 import HomeStackNavigator from "./HomeStackNavigator";
 import CoursesStackNavigator from "./CoursesStackNavigator";
@@ -30,21 +31,6 @@ function ResultsPlaceholder() {
       <Text style={styles.placeholderSub}>
         Los resultados aparecerán aquí cuando estén publicados
       </Text>
-    </View>
-  );
-}
-
-function ProfilePlaceholder() {
-  return (
-    <View style={styles.placeholder}>
-      <MaterialCommunityIcons
-        name="account-circle-outline"
-        size={48}
-        color={AppColors.textMuted}
-        style={styles.placeholderIcon}
-      />
-      <Text style={styles.placeholderTitle}>Perfil</Text>
-      <Text style={styles.placeholderSub}>Próximamente</Text>
     </View>
   );
 }
@@ -83,7 +69,7 @@ export default function StudentTabsNavigator() {
       />
       <Tab.Screen
         name="Profile"
-        component={ProfilePlaceholder}
+        component={ProfileScreen}
         options={{ tabBarLabel: "Perfil" }}
       />
     </Tab.Navigator>
