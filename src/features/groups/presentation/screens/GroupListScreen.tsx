@@ -18,10 +18,10 @@ export default function GroupListScreen() {
 
   const groups = groupsByCategory[categoryId] || [];
 
-  useEffect(() => {
-    loadGroups(categoryId);
-    loadMemberships(studentId);
-  }, [categoryId]);
+useEffect(() => {
+  loadGroups(categoryId);
+  loadMemberships(studentId);
+}, [categoryId, studentId, loadGroups, loadMemberships]);
 
   const userGroupId =
     getUserGroupForCategory(categoryId);
