@@ -5,6 +5,7 @@ import CourseDetailScreen from "@/src/features/courses/presentation/screens/Cour
 import CourseListScreen from "@/src/features/courses/presentation/screens/CourseListScreen";
 import JoinCourseScreen from "@/src/features/courses/presentation/screens/JoinCourseScreen";
 import GroupListScreen from "@/src/features/groups/presentation/screens/GroupListScreen";
+import GroupMembersScreen from "@/src/features/groups/presentation/screens/GroupMembersScreen";
 import { AppColors } from "@/src/theme/appColors";
 
 export type CoursesStackParamList = {
@@ -12,6 +13,7 @@ export type CoursesStackParamList = {
   JoinCourse: undefined;
   CourseDetail: { courseId: string };
   GroupList: { categoryId: string; categoryName: string };
+  GroupMembers: { groupId: string; groupName: string };
 };
 
 const Stack = createNativeStackNavigator<CoursesStackParamList>();
@@ -34,6 +36,7 @@ export default function CoursesStackNavigator() {
       />
       <Stack.Screen name="CourseDetail" component={CourseDetailScreen} />
       <Stack.Screen name="GroupList" component={GroupListScreen} />
+      <Stack.Screen name="GroupMembers" component={GroupMembersScreen} />
     </Stack.Navigator>
   );
 }

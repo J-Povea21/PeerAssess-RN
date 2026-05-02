@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
-import { ActivityIndicator, Appbar, Chip, Snackbar, Surface, Text } from "react-native-paper";
+import { ActivityIndicator, Appbar, Chip, Snackbar, Surface, Text, TouchableRipple } from "react-native-paper";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { useAuthStore } from "@/src/features/auth/presentation/store/useAuthStore";
@@ -61,27 +61,38 @@ export default function GroupListScreen({ navigation, route }: Props) {
           {groups.map((group) => {
             const isMine = myGroupIds.includes(group._id);
             return (
-              <Surface
+              <TouchableRipple
                 key={group._id}
-                style={[styles.row, isMine && styles.rowHighlighted]}
-                elevation={1}
+                onPress={() =>
+                  navigation.navigate("GroupMembers", {
+                    groupId: group._id,
+                    groupName: group.name,
+                  })
+                }
+                borderless
+                style={styles.ripple}
               >
-                <View style={[styles.rowIcon, isMine && styles.rowIconHighlighted]}>
-                  <MaterialCommunityIcons
-                    name="account-group-outline"
-                    size={22}
-                    color={isMine ? "#FFFFFF" : AppColors.olive}
-                  />
-                </View>
-                <Text style={[styles.rowLabel, isMine && styles.rowLabelHighlighted]}>
-                  {group.name}
-                </Text>
-                {isMine && (
-                  <Chip style={styles.myChip} textStyle={styles.myChipText} compact>
-                    Tu grupo
-                  </Chip>
-                )}
-              </Surface>
+                <Surface
+                  style={[styles.row, isMine && styles.rowHighlighted]}
+                  elevation={1}
+                >
+                  <View style={[styles.rowIcon, isMine && styles.rowIconHighlighted]}>
+                    <MaterialCommunityIcons
+                      name="account-group-outline"
+                      size={22}
+                      color={isMine ? "#FFFFFF" : AppColors.olive}
+                    />
+                  </View>
+                  <Text style={[styles.rowLabel, isMine && styles.rowLabelHighlighted]}>
+                    {group.name}
+                  </Text>
+                  {isMine && (
+                    <Chip style={styles.myChip} textStyle={styles.myChipText} compact>
+                      Tu grupo
+                    </Chip>
+                  )}
+                </Surface>
+              </TouchableRipple>
             );
           })}
         </ScrollView>
@@ -126,6 +137,9 @@ const styles = StyleSheet.create({
   list: {
     padding: 16,
     gap: 10,
+  },
+  ripple: {
+    borderRadius: 14,
   },
   row: {
     flexDirection: "row",
