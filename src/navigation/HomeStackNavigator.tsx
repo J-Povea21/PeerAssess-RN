@@ -1,6 +1,7 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
+import CourseDetailScreen from "@/src/features/courses/presentation/screens/CourseDetailScreen";
 import StudentHomeScreen from "@/src/features/home/presentation/screens/StudentHomeScreen";
 import JoinCourseScreen from "@/src/features/courses/presentation/screens/JoinCourseScreen";
 import { AppColors } from "@/src/theme/appColors";
@@ -8,6 +9,7 @@ import { AppColors } from "@/src/theme/appColors";
 export type HomeStackParamList = {
   Home: undefined;
   JoinCourse: undefined;
+  CourseDetail: { courseId: string };
 };
 
 const Stack = createNativeStackNavigator<HomeStackParamList>();
@@ -28,6 +30,7 @@ export default function HomeStackNavigator() {
           headerShadowVisible: false,
         }}
       />
+      <Stack.Screen name="CourseDetail" component={CourseDetailScreen} />
     </Stack.Navigator>
   );
 }

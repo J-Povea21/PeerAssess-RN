@@ -83,11 +83,9 @@ export default function StudentHomeScreen({ navigation }: { navigation: any }) {
             <CourseCard
               key={course._id}
               course={course}
-              onPress={() => {
-                // CourseDetail not yet implemented — no-op until that feature ships
-                // eslint-disable-next-line no-console
-                if (__DEV__) console.log("CourseDetail pending:", course._id);
-              }}
+              onPress={() =>
+                navigation.navigate("CourseDetail", { courseId: course._id })
+              }
             />
           ))
         )}
