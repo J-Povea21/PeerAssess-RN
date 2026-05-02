@@ -43,7 +43,7 @@ export default function CourseDetailScreen({ navigation, route }: Props) {
   if (!course) {
     return (
       <LinearGradient colors={BG_COLORS} style={styles.container}>
-        <Appbar.Header style={styles.appbar} statusBarHeight={0}>
+        <Appbar.Header style={styles.appbar}>
           <Appbar.BackAction
             color={AppColors.textDark}
             onPress={() => navigation.goBack()}
@@ -68,7 +68,7 @@ export default function CourseDetailScreen({ navigation, route }: Props) {
 
   return (
     <LinearGradient colors={BG_COLORS} style={styles.container}>
-      <Appbar.Header style={styles.appbar} statusBarHeight={0}>
+      <Appbar.Header style={styles.appbar}>
         <Appbar.BackAction
           color={AppColors.textDark}
           onPress={() => navigation.goBack()}
