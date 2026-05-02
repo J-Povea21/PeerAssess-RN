@@ -14,7 +14,8 @@ type CourseRow = { _id: string; name: string; semester: string; accessCode?: str
 type CountRow = { _id: string };
 type CategoryRow = { _id: string; courseID: string };
 type GroupRow = { _id: string; categoryID: string };
-type GroupMemberRow = { _id: string; groupID: string; fullName?: string; name?: string; email?: string };
+type GroupMemberRow = { _id: string; groupID: string; studentID: string };
+type UserRow = { _id: string; mail?: string; name?: string; fullName?: string };
 
 export class CourseRemoteDataSourceImpl implements CourseDataSource {
   async getCoursesByStudent(studentId: string): Promise<Course[]> {
@@ -114,15 +115,24 @@ export class CourseRemoteDataSourceImpl implements CourseDataSource {
     const memberLists = await Promise.all(
       groups.map((g) => db.readTable<GroupMemberRow>("GroupMembers", { groupID: g._id }))
     );
+    const allMembers = memberLists.flat();
+
+    // Dedupe at the studentID level first to minimize Users lookups.
+    const studentIds = Array.from(new Set(allMembers.map((m) => m.studentID).filter(Boolean)));
+    if (studentIds.length === 0) return [];
+
+    // TODO: 1 request per student — batch when Roble supports multi-ID reads (same pattern as getCoursesByStudent)
+    const userLists = await Promise.all(
+      studentIds.map((id) => db.readTable<UserRow>("Users", { _id: id }))
+    );
 
     const byEmail = new Map<string, CourseMember>();
-    for (const row of memberLists.flat()) {
-      const email = row.email?.trim().toLowerCase();
-      if (!email) continue;
-      if (byEmail.has(email)) continue;
+    for (const row of userLists.flat()) {
+      const email = row.mail?.trim().toLowerCase();
+      if (!email || byEmail.has(email)) continue;
       byEmail.set(email, {
         email,
-        fullName: (row.fullName ?? row.name ?? "").trim(),
+        fullName: (row.name ?? row.fullName ?? "").trim(),
       });
     }
 
