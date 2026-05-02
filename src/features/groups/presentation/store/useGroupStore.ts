@@ -11,6 +11,7 @@ type GroupState = {
   _membershipStudentId: string | null;
   isLoadingCategories: boolean;
   isLoadingGroups: boolean;
+  isLoadingMembership: boolean;
   error: string | null;
   _repo: GroupRepository | null;
   init: (repo: GroupRepository) => void;
@@ -27,6 +28,7 @@ export const useGroupStore = create<GroupState>((set, get) => ({
   _membershipStudentId: null,
   isLoadingCategories: false,
   isLoadingGroups: false,
+  isLoadingMembership: false,
   error: null,
   _repo: null,
 
@@ -52,7 +54,7 @@ export const useGroupStore = create<GroupState>((set, get) => ({
   fetchGroups: async (categoryId) => {
     const { _repo, groupsByCategory } = get();
     if (!_repo) throw new Error("GroupStore not initialized");
-    if (groupsByCategory[categoryId]) return;
+    if (categoryId in groupsByCategory) return;
 
     set({ isLoadingGroups: true, error: null });
     try {
@@ -72,11 +74,14 @@ export const useGroupStore = create<GroupState>((set, get) => ({
     if (!_repo) throw new Error("GroupStore not initialized");
     if (_membershipStudentId === studentId) return;
 
+    set({ isLoadingMembership: true, error: null });
     try {
       const members = await _repo.getGroupMembersByStudent(studentId);
       set({ myGroupIds: members.map((m) => m.groupID), _membershipStudentId: studentId });
     } catch (e) {
       set({ error: (e as Error).message });
+    } finally {
+      set({ isLoadingMembership: false });
     }
   },
 
