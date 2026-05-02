@@ -162,7 +162,6 @@ const styles = StyleSheet.create({
   },
   myChip: {
     backgroundColor: AppColors.olive,
-    height: 28,
   },
   myChipText: {
     fontSize: 11,
