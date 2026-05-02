@@ -34,7 +34,7 @@ export default function GroupListScreen({ navigation, route }: Props) {
   useEffect(() => {
     fetchGroups(categoryId);
     if (user?.id) fetchMyMembership(user.id);
-  }, [categoryId, user?.id]);
+  }, [categoryId, user?.id, fetchGroups, fetchMyMembership]);
 
   return (
     <LinearGradient colors={BG_COLORS} style={styles.container}>
@@ -43,7 +43,7 @@ export default function GroupListScreen({ navigation, route }: Props) {
         <Appbar.Content title={categoryName} titleStyle={styles.appbarTitle} />
       </Appbar.Header>
 
-      {(isLoadingGroups || isLoadingMembership) && groups.length === 0 ? (
+      {isLoadingGroups || isLoadingMembership ? (
         <View style={styles.centered}>
           <ActivityIndicator color={AppColors.olive} />
         </View>
