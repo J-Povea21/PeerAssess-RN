@@ -148,6 +148,3 @@ vite.config.ts.timestamp-*
 expo-env.d.ts
 # @end expo-cli
 .expo/
-
-# Claude Code per-user local settings
-.claude/settings.local.json
