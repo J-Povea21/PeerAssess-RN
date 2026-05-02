@@ -10,7 +10,7 @@ import CourseTabBar, {
 import CategoriasPlaceholderTab from "@/src/features/courses/presentation/components/tabs/CategoriasPlaceholderTab";
 import EvaluacionesPlaceholderTab from "@/src/features/courses/presentation/components/tabs/EvaluacionesPlaceholderTab";
 import InfoTab from "@/src/features/courses/presentation/components/tabs/InfoTab";
-import MiembrosPlaceholderTab from "@/src/features/courses/presentation/components/tabs/MiembrosPlaceholderTab";
+import MembersTab from "@/src/features/courses/presentation/components/tabs/MembersTab";
 import { useCourseStore } from "@/src/features/courses/presentation/store/useCourseStore";
 import { AppColors } from "@/src/theme/appColors";
 
@@ -36,7 +36,7 @@ export default function CourseDetailScreen({ navigation, route }: Props) {
       case "evaluaciones":
         return <EvaluacionesPlaceholderTab />;
       case "miembros":
-        return <MiembrosPlaceholderTab />;
+        return <MembersTab courseId={course._id} />;
     }
   }, [activeTab, course]);
 

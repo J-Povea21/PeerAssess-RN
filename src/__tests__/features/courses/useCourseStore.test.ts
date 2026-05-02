@@ -16,6 +16,7 @@ const mockCourse: Course = {
 const mockRepo: CourseRepository = {
   getCoursesByStudent: jest.fn().mockResolvedValue([mockCourse]),
   joinCourse: jest.fn().mockResolvedValue(mockCourse),
+  getMembersByCourse: jest.fn().mockResolvedValue([]),
 };
 
 beforeEach(() => {
@@ -23,9 +24,12 @@ beforeEach(() => {
     courses: [],
     isLoading: false,
     error: null,
+    membersByCourse: {},
+    isLoadingMembers: false,
     _repo: null,
     _cachedStudentId: null,
     _isFetched: false,
+    _membersFetched: new Set<string>(),
   });
   jest.clearAllMocks();
 });
