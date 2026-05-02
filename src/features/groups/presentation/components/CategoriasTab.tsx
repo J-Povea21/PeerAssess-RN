@@ -13,61 +13,57 @@ type Props = {
 };
 
 export default function CategoriasTab({ courseId, navigation }: Props) {
-  const { categoriesByCourse, isLoadingCategories, error, fetchCategories, clearError } =
-    useGroupStore();
+  const { categoriesByCourse, error, fetchCategories, clearError } = useGroupStore();
   const categories = categoriesByCourse[courseId] ?? [];
 
   useFocusEffect(
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     useCallback(() => {
       fetchCategories(courseId);
     }, [courseId])
   );
 
-  if (isLoadingCategories && categories.length === 0) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator color={AppColors.olive} />
-      </View>
-    );
-  }
-
-  if (!isLoadingCategories && categories.length === 0) {
-    return (
-      <View style={styles.centered}>
-        <MaterialCommunityIcons
-          name="tag-multiple-outline"
-          size={48}
-          color={AppColors.textMuted}
-          style={styles.emptyIcon}
-        />
-        <Text style={styles.emptyText}>No hay categorías en este curso</Text>
-      </View>
-    );
-  }
-
   return (
     <>
-      <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
-        {categories.map((cat) => (
-          <TouchableRipple
-            key={cat._id}
-            onPress={() =>
-              navigation.navigate("GroupList", {
-                categoryId: cat._id,
-                categoryName: cat.name,
-              })
-            }
-          >
-            <Surface style={styles.row} elevation={1}>
-              <View style={styles.rowIcon}>
-                <MaterialCommunityIcons name="tag-outline" size={22} color={AppColors.olive} />
-              </View>
-              <Text style={styles.rowLabel}>{cat.name}</Text>
-              <MaterialCommunityIcons name="chevron-right" size={20} color={AppColors.textMuted} />
-            </Surface>
-          </TouchableRipple>
-        ))}
-      </ScrollView>
+      {categories.length === 0 ? (
+        error ? (
+          <View style={styles.centered}>
+            <MaterialCommunityIcons
+              name="tag-multiple-outline"
+              size={48}
+              color={AppColors.textMuted}
+              style={styles.emptyIcon}
+            />
+            <Text style={styles.emptyText}>No hay categorías en este curso</Text>
+          </View>
+        ) : (
+          <View style={styles.centered}>
+            <ActivityIndicator color={AppColors.olive} />
+          </View>
+        )
+      ) : (
+        <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
+          {categories.map((cat) => (
+            <TouchableRipple
+              key={cat._id}
+              onPress={() =>
+                navigation.navigate("GroupList", {
+                  categoryId: cat._id,
+                  categoryName: cat.name,
+                })
+              }
+            >
+              <Surface style={styles.row} elevation={1}>
+                <View style={styles.rowIcon}>
+                  <MaterialCommunityIcons name="tag-outline" size={22} color={AppColors.olive} />
+                </View>
+                <Text style={styles.rowLabel}>{cat.name}</Text>
+                <MaterialCommunityIcons name="chevron-right" size={20} color={AppColors.textMuted} />
+              </Surface>
+            </TouchableRipple>
+          ))}
+        </ScrollView>
+      )}
       <Snackbar
         visible={!!error}
         onDismiss={clearError}
