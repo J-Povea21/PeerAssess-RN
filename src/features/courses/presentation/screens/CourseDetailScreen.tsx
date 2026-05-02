@@ -38,7 +38,7 @@ export default function CourseDetailScreen({ navigation, route }: Props) {
       case "miembros":
         return <MiembrosPlaceholderTab />;
     }
-  }, [activeTab, course]);
+  }, [activeTab, course, courseId, navigation]);
 
   if (!course) {
     return (

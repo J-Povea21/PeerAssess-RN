@@ -13,7 +13,7 @@ type Props = {
 };
 
 export default function CategoriasTab({ courseId, navigation }: Props) {
-  const { categoriesByCourse, error, fetchCategories, clearError } = useGroupStore();
+  const { categoriesByCourse, isLoadingCategories, error, fetchCategories, clearError } = useGroupStore();
   const categories = categoriesByCourse[courseId] ?? [];
 
   useFocusEffect(
@@ -25,22 +25,20 @@ export default function CategoriasTab({ courseId, navigation }: Props) {
 
   return (
     <>
-      {categories.length === 0 ? (
-        error ? (
-          <View style={styles.centered}>
-            <MaterialCommunityIcons
-              name="tag-multiple-outline"
-              size={48}
-              color={AppColors.textMuted}
-              style={styles.emptyIcon}
-            />
-            <Text style={styles.emptyText}>No hay categorías en este curso</Text>
-          </View>
-        ) : (
-          <View style={styles.centered}>
-            <ActivityIndicator color={AppColors.olive} />
-          </View>
-        )
+      {isLoadingCategories && categories.length === 0 ? (
+        <View style={styles.centered}>
+          <ActivityIndicator color={AppColors.olive} />
+        </View>
+      ) : !isLoadingCategories && categories.length === 0 ? (
+        <View style={styles.centered}>
+          <MaterialCommunityIcons
+            name="tag-multiple-outline"
+            size={48}
+            color={AppColors.textMuted}
+            style={styles.emptyIcon}
+          />
+          <Text style={styles.emptyText}>No hay categorías en este curso</Text>
+        </View>
       ) : (
         <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
           {categories.map((cat) => (

@@ -3,17 +3,16 @@ import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { ActivityIndicator, Appbar, Chip, Snackbar, Surface, Text } from "react-native-paper";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { useAuthStore } from "@/src/features/auth/presentation/store/useAuthStore";
 import { useGroupStore } from "@/src/features/groups/presentation/store/useGroupStore";
+import { CoursesStackParamList } from "@/src/navigation/CoursesStackNavigator";
 import { AppColors } from "@/src/theme/appColors";
 
 const BG_COLORS = [AppColors.beige, "#FFFFFF", AppColors.rose + "0D"] as const;
 
-type Props = {
-  navigation: any;
-  route: { params: { categoryId: string; categoryName: string } };
-};
+type Props = NativeStackScreenProps<CoursesStackParamList, "GroupList">;
 
 export default function GroupListScreen({ navigation, route }: Props) {
   const { categoryId, categoryName } = route.params;
