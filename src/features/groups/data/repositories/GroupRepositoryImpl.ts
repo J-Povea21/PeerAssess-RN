@@ -18,4 +18,12 @@ export class GroupRepositoryImpl implements GroupRepository {
   getGroupMembersByStudent(studentId: string): Promise<GroupMember[]> {
     return this.dataSource.getGroupMembersByStudent(studentId);
   }
+
+  getGroupMembersByGroup(groupId: string): Promise<GroupMember[]> {
+    return this.dataSource.getGroupMembersByGroup(groupId);
+  }
+
+  getUserNamesByIds(ids: string[]): Promise<{ id: string; name: string }[]> {
+    return this.dataSource.getUserNamesByIds(ids);
+  }
 }

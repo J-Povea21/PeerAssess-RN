@@ -27,4 +27,20 @@ export class GroupRemoteDataSourceImpl implements GroupDataSource {
     const rows = await db.readTable<GroupMemberRow>("GroupMembers", { studentID: studentId });
     return rows.map((r): GroupMember => ({ _id: r._id, groupID: r.groupID, studentID: r.studentID }));
   }
+
+  async getGroupMembersByGroup(groupId: string): Promise<GroupMember[]> {
+    const db = new RobleDbClient(authorizedFetch);
+    const rows = await db.readTable<GroupMemberRow>("GroupMembers", { groupID: groupId });
+    return rows.map((r): GroupMember => ({ _id: r._id, groupID: r.groupID, studentID: r.studentID }));
+  }
+
+  async getUserNamesByIds(ids: string[]): Promise<{ id: string; name: string }[]> {
+    const db = new RobleDbClient(authorizedFetch);
+    return Promise.all(
+      ids.map(async (id) => {
+        const rows = await db.readTable<{ _id: string; name: string }>("Users", { _id: id });
+        return { id, name: rows.length > 0 ? rows[0].name : id };
+      })
+    );
+  }
 }
