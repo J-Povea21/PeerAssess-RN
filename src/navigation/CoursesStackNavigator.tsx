@@ -4,12 +4,14 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import CourseDetailScreen from "@/src/features/courses/presentation/screens/CourseDetailScreen";
 import CourseListScreen from "@/src/features/courses/presentation/screens/CourseListScreen";
 import JoinCourseScreen from "@/src/features/courses/presentation/screens/JoinCourseScreen";
+import GroupListScreen from "@/src/features/groups/presentation/screens/GroupListScreen";
 import { AppColors } from "@/src/theme/appColors";
 
 export type CoursesStackParamList = {
   CourseList: undefined;
   JoinCourse: undefined;
   CourseDetail: { courseId: string };
+  GroupList: { categoryId: string; categoryName: string };
 };
 
 const Stack = createNativeStackNavigator<CoursesStackParamList>();
@@ -31,6 +33,7 @@ export default function CoursesStackNavigator() {
         }}
       />
       <Stack.Screen name="CourseDetail" component={CourseDetailScreen} />
+      <Stack.Screen name="GroupList" component={GroupListScreen} />
     </Stack.Navigator>
   );
 }
