@@ -1,0 +1,14 @@
+#!/bin/sh
+echo "Type checking..."
+pnpm tsc --noEmit
+if [ $? -ne 0 ]; then
+  echo "TypeScript errors found — push aborted."
+  exit 1
+fi
+
+echo "Running tests..."
+pnpm test:ci
+if [ $? -ne 0 ]; then
+  echo "Tests failed — push aborted."
+  exit 1
+fi
