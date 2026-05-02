@@ -1,6 +1,7 @@
 import { authorizedFetch } from "@/src/core/http/authorizedFetch";
 import { RobleDbClient } from "@/src/core/http/RobleDbClient";
 import { Course, CourseStatus } from "../../../domain/entities/Course";
+import { CourseMember } from "../../../domain/entities/CourseMember";
 import { CourseDataSource } from "../CourseDataSource";
 
 const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -11,6 +12,9 @@ function generateId(length = 12): string {
 type CourseEnrollmentRow = { _id: string; courseID: string; studentID: string };
 type CourseRow = { _id: string; name: string; semester: string; accessCode?: string; status?: string };
 type CountRow = { _id: string };
+type CategoryRow = { _id: string; courseID: string };
+type GroupRow = { _id: string; categoryID: string };
+type GroupMemberRow = { _id: string; groupID: string; fullName?: string; name?: string; email?: string };
 
 export class CourseRemoteDataSourceImpl implements CourseDataSource {
   async getCoursesByStudent(studentId: string): Promise<Course[]> {
@@ -93,5 +97,37 @@ export class CourseRemoteDataSourceImpl implements CourseDataSource {
       pendingEvaluations: 0, // TODO: compute from assessments table when evaluations feature ships
       enrollmentCode: row.accessCode,
     };
+  }
+
+  async getMembersByCourse(courseId: string): Promise<CourseMember[]> {
+    const db = new RobleDbClient(authorizedFetch);
+
+    const categories = await db.readTable<CategoryRow>("GroupCategories", { courseID: courseId });
+    if (categories.length === 0) return [];
+
+    const groupLists = await Promise.all(
+      categories.map((c) => db.readTable<GroupRow>("Groups", { categoryID: c._id }))
+    );
+    const groups = groupLists.flat();
+    if (groups.length === 0) return [];
+
+    const memberLists = await Promise.all(
+      groups.map((g) => db.readTable<GroupMemberRow>("GroupMembers", { groupID: g._id }))
+    );
+
+    const byEmail = new Map<string, CourseMember>();
+    for (const row of memberLists.flat()) {
+      const email = row.email?.trim().toLowerCase();
+      if (!email) continue;
+      if (byEmail.has(email)) continue;
+      byEmail.set(email, {
+        email,
+        fullName: (row.fullName ?? row.name ?? "").trim(),
+      });
+    }
+
+    return Array.from(byEmail.values()).sort((a, b) =>
+      a.fullName.localeCompare(b.fullName, "es", { sensitivity: "base" })
+    );
   }
 }

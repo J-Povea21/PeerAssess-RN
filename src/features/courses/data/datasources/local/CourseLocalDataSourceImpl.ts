@@ -1,4 +1,5 @@
 import { Course } from "../../../domain/entities/Course";
+import { CourseMember } from "../../../domain/entities/CourseMember";
 import { CourseDataSource } from "../CourseDataSource";
 
 const MOCK_COURSES: Course[] = [
@@ -37,6 +38,21 @@ const MOCK_COURSES: Course[] = [
   },
 ];
 
+// Some emails appear twice across groups to exercise the dedupe path.
+const MOCK_MEMBERS: Record<string, CourseMember[]> = {
+  "local-course-1": [
+    { email: "ana.lopez@uninorte.edu.co", fullName: "Ana López" },
+    { email: "ana.lopez@uninorte.edu.co", fullName: "Ana López" },
+    { email: "juan.perez@uninorte.edu.co", fullName: "Juan Pérez" },
+    { email: "madonna@uninorte.edu.co", fullName: "Madonna" },
+  ],
+  "local-course-2": [
+    { email: "carlos.diaz@uninorte.edu.co", fullName: "Carlos Díaz" },
+    { email: "maria.gomez@uninorte.edu.co", fullName: "María Gómez" },
+  ],
+  "local-course-3": [],
+};
+
 const VALID_CODES = new Set(["LOCAL1", "LOCAL2", "LOCAL3"]);
 
 export class CourseLocalDataSourceImpl implements CourseDataSource {
@@ -59,5 +75,18 @@ export class CourseLocalDataSourceImpl implements CourseDataSource {
 
     this.enrolled.add(course._id);
     return course;
+  }
+
+  async getMembersByCourse(courseId: string): Promise<CourseMember[]> {
+    const rows = MOCK_MEMBERS[courseId] ?? [];
+    const byEmail = new Map<string, CourseMember>();
+    for (const row of rows) {
+      const email = row.email.trim().toLowerCase();
+      if (!email || byEmail.has(email)) continue;
+      byEmail.set(email, { email, fullName: row.fullName.trim() });
+    }
+    return Array.from(byEmail.values()).sort((a, b) =>
+      a.fullName.localeCompare(b.fullName, "es", { sensitivity: "base" })
+    );
   }
 }
