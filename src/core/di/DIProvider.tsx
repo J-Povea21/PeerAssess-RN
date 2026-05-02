@@ -8,6 +8,10 @@ import { CourseLocalDataSourceImpl } from "@/src/features/courses/data/datasourc
 import { CourseRemoteDataSourceImpl } from "@/src/features/courses/data/datasources/remote/CourseRemoteDataSourceImpl";
 import { CourseRepositoryImpl } from "@/src/features/courses/data/repositories/CourseRepositoryImpl";
 import { useCourseStore } from "@/src/features/courses/presentation/store/useCourseStore";
+import { GroupLocalDataSourceImpl } from "@/src/features/groups/data/datasources/local/GroupLocalDataSourceImpl";
+import { GroupRemoteDataSourceImpl } from "@/src/features/groups/data/datasources/remote/GroupRemoteDataSourceImpl";
+import { GroupRepositoryImpl } from "@/src/features/groups/data/repositories/GroupRepositoryImpl";
+import { useGroupStore } from "@/src/features/groups/presentation/store/useGroupStore";
 import Container from "./container";
 import { TOKENS } from "./tokens";
 
@@ -30,6 +34,12 @@ export function DIProvider({ children }: { children: ReactNode }) {
     const courseRepo = new CourseRepositoryImpl(courseDS);
     c.register(TOKENS.CourseRemoteDS, courseDS).register(TOKENS.CourseRepo, courseRepo);
     useCourseStore.getState().init(courseRepo);
+
+    // Groups
+    const groupDS = useLocal ? new GroupLocalDataSourceImpl() : new GroupRemoteDataSourceImpl();
+    const groupRepo = new GroupRepositoryImpl(groupDS);
+    c.register(TOKENS.GroupRemoteDS, groupDS).register(TOKENS.GroupRepo, groupRepo);
+    useGroupStore.getState().init(groupRepo);
 
     return c;
   }, []);

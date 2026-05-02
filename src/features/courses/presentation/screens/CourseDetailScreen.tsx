@@ -7,7 +7,7 @@ import { Appbar, Text } from "react-native-paper";
 import CourseTabBar, {
   CourseTabKey,
 } from "@/src/features/courses/presentation/components/CourseTabBar";
-import CategoriasPlaceholderTab from "@/src/features/courses/presentation/components/tabs/CategoriasPlaceholderTab";
+import CategoriasTab from "@/src/features/groups/presentation/components/CategoriasTab";
 import EvaluacionesPlaceholderTab from "@/src/features/courses/presentation/components/tabs/EvaluacionesPlaceholderTab";
 import InfoTab from "@/src/features/courses/presentation/components/tabs/InfoTab";
 import MembersTab from "@/src/features/courses/presentation/components/tabs/MembersTab";
@@ -32,13 +32,13 @@ export default function CourseDetailScreen({ navigation, route }: Props) {
       case "info":
         return <InfoTab course={course} />;
       case "categorias":
-        return <CategoriasPlaceholderTab />;
+        return <CategoriasTab courseId={courseId} navigation={navigation} />;
       case "evaluaciones":
         return <EvaluacionesPlaceholderTab />;
       case "miembros":
         return <MembersTab courseId={course._id} />;
     }
-  }, [activeTab, course]);
+  }, [activeTab, course, courseId, navigation]);
 
   if (!course) {
     return (
