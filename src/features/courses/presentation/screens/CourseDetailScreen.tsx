@@ -8,7 +8,7 @@ import CourseTabBar, {
   CourseTabKey,
 } from "@/src/features/courses/presentation/components/CourseTabBar";
 import CategoriasTab from "@/src/features/groups/presentation/components/CategoriasTab";
-import EvaluacionesPlaceholderTab from "@/src/features/courses/presentation/components/tabs/EvaluacionesPlaceholderTab";
+import EvaluationsTab from "@/src/features/evaluations/presentation/screens/EvaluationsTab";
 import InfoTab from "@/src/features/courses/presentation/components/tabs/InfoTab";
 import MembersTab from "@/src/features/courses/presentation/components/tabs/MembersTab";
 import { useCourseStore } from "@/src/features/courses/presentation/store/useCourseStore";
@@ -34,7 +34,7 @@ export default function CourseDetailScreen({ navigation, route }: Props) {
       case "categorias":
         return <CategoriasTab courseId={courseId} navigation={navigation} />;
       case "evaluaciones":
-        return <EvaluacionesPlaceholderTab />;
+        return <EvaluationsTab courseId={courseId} navigation={navigation} />;
       case "miembros":
         return <MembersTab courseId={course._id} />;
     }

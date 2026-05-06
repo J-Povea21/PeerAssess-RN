@@ -9,6 +9,7 @@ import { useAuthStore } from "@/src/features/auth/presentation/store/useAuthStor
 import CourseCard from "@/src/features/courses/presentation/components/CourseCard";
 import PendingBanner from "@/src/features/courses/presentation/components/PendingBanner";
 import { useCourseStore } from "@/src/features/courses/presentation/store/useCourseStore";
+import { useEvaluationStore } from "@/src/features/evaluations/presentation/store/useEvaluationStore";
 import LogoBox from "@/src/core/components/LogoBox";
 import { AppColors } from "@/src/theme/appColors";
 
@@ -18,12 +19,16 @@ export default function StudentHomeScreen({ navigation }: { navigation: any }) {
   const insets = useSafeAreaInsets();
   const { user } = useAuthStore();
   const { courses, isLoading, fetchCoursesByStudent } = useCourseStore();
+  const { myResults, fetchMyResults } = useEvaluationStore();
 
   useEffect(() => {
     if (user?.id) {
       fetchCoursesByStudent(user.id);
+      fetchMyResults(user.id);
     }
   }, [user?.id, fetchCoursesByStudent]);
+
+  const recentResults = myResults.slice(0, 3);
 
   const initials = user?.name
     ? user.name
@@ -95,13 +100,34 @@ export default function StudentHomeScreen({ navigation }: { navigation: any }) {
           RESULTADOS RECIENTES
         </Text>
 
-        <View style={styles.noResultsCard}>
-          <LogoBox size={64} style={styles.noResultsLogo} />
-          <Text style={styles.noResultsTitle}>No hay resultados recientes</Text>
-          <Text style={styles.noResultsSubtitle}>
-            Aquí aparecerán tus calificaciones cuando{"\n"}se publiquen los resultados
-          </Text>
-        </View>
+        {recentResults.length === 0 ? (
+          <View style={styles.noResultsCard}>
+            <LogoBox size={64} style={styles.noResultsLogo} />
+            <Text style={styles.noResultsTitle}>No hay resultados recientes</Text>
+            <Text style={styles.noResultsSubtitle}>
+              Aquí aparecerán tus calificaciones cuando{"\n"}se publiquen los resultados
+            </Text>
+          </View>
+        ) : (
+          recentResults.map((result) => (
+            <View key={result.assessmentId} style={styles.resultCard}>
+              <View style={styles.resultScoreBadge}>
+                <Text style={styles.resultScoreText}>{result.averageScore.toFixed(1)}</Text>
+              </View>
+              <View style={styles.resultInfo}>
+                <Text style={styles.resultTitle} numberOfLines={2}>
+                  {result.assessmentTitle}
+                </Text>
+                <Text style={styles.resultMeta}>
+                  {result.evaluationCount}{" "}
+                  {result.evaluationCount === 1
+                    ? "evaluación recibida"
+                    : "evaluaciones recibidas"}
+                </Text>
+              </View>
+            </View>
+          ))
+        )}
       </ScrollView>
 
       <FAB
@@ -213,4 +239,32 @@ const styles = StyleSheet.create({
     bottom: 20,
     backgroundColor: AppColors.olive,
   },
+  resultCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  resultScoreBadge: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: AppColors.wheat,
+    borderWidth: 2,
+    borderColor: AppColors.olive,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 14,
+  },
+  resultScoreText: { fontSize: 16, fontWeight: "700", color: AppColors.textDark },
+  resultInfo: { flex: 1 },
+  resultTitle: { fontSize: 14, fontWeight: "600", color: AppColors.textDark, marginBottom: 2 },
+  resultMeta: { fontSize: 12, color: AppColors.textMuted },
 });

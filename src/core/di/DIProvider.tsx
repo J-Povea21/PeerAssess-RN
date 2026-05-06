@@ -12,6 +12,9 @@ import { GroupLocalDataSourceImpl } from "@/src/features/groups/data/datasources
 import { GroupRemoteDataSourceImpl } from "@/src/features/groups/data/datasources/remote/GroupRemoteDataSourceImpl";
 import { GroupRepositoryImpl } from "@/src/features/groups/data/repositories/GroupRepositoryImpl";
 import { useGroupStore } from "@/src/features/groups/presentation/store/useGroupStore";
+import { EvaluationRemoteDataSourceImpl } from "@/src/features/evaluations/data/datasources/remote/EvaluationRemoteDataSourceImpl";
+import { EvaluationRepositoryImpl } from "@/src/features/evaluations/data/repositories/EvaluationRepositoryImpl";
+import { useEvaluationStore } from "@/src/features/evaluations/presentation/store/useEvaluationStore";
 import Container from "./container";
 import { TOKENS } from "./tokens";
 
@@ -40,6 +43,13 @@ export function DIProvider({ children }: { children: ReactNode }) {
     const groupRepo = new GroupRepositoryImpl(groupDS);
     c.register(TOKENS.GroupRemoteDS, groupDS).register(TOKENS.GroupRepo, groupRepo);
     useGroupStore.getState().init(groupRepo);
+
+    // Evaluations
+    const evaluationDS = new EvaluationRemoteDataSourceImpl();
+    const evaluationRepo = new EvaluationRepositoryImpl(evaluationDS);
+    c.register(TOKENS.EvaluationRemoteDS, evaluationDS)
+     .register(TOKENS.EvaluationRepo, evaluationRepo);
+    useEvaluationStore.getState().init(evaluationRepo);
 
     return c;
   }, []);
