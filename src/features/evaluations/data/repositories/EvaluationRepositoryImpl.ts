@@ -3,6 +3,7 @@ import { NewCriteriaScore } from "../../domain/entities/CriteriaScore";
 import { NewEvaluation } from "../../domain/entities/Evaluation";
 import { StudentResult } from "../../domain/entities/StudentResult";
 import {
+  CourseAssessment,
   EvaluationRepository,
   PendingAssessment,
 } from "../../domain/repositories/EvaluationRepository";
@@ -13,6 +14,10 @@ export class EvaluationRepositoryImpl implements EvaluationRepository {
 
   getPendingAssessments(studentId: string): Promise<PendingAssessment[]> {
     return this.dataSource.getPendingAssessments(studentId);
+  }
+
+  getAssessmentsForCourse(studentId: string, categoryIds: string[]): Promise<CourseAssessment[]> {
+    return this.dataSource.getAssessmentsForCourse(studentId, categoryIds);
   }
 
   getCriteriaForAssessment(assessmentId: string): Promise<Criteria[]> {

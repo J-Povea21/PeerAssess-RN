@@ -7,7 +7,7 @@ import { NewCriteriaScore } from "../../../domain/entities/CriteriaScore";
 import { NewEvaluation } from "../../../domain/entities/Evaluation";
 import { CriteriaAverage, StudentResult } from "../../../domain/entities/StudentResult";
 import { EvaluationDataSource } from "../EvaluationDataSource";
-import { PendingAssessment } from "../../../domain/repositories/EvaluationRepository";
+import { CourseAssessment, PendingAssessment } from "../../../domain/repositories/EvaluationRepository";
 
 type AssessmentRow = {
   _id: string;
@@ -112,6 +112,94 @@ export class EvaluationRemoteDataSourceImpl implements EvaluationDataSource {
     );
 
     return results.filter((r): r is PendingAssessment => r !== null);
+  }
+
+  async getAssessmentsForCourse(studentId: string, categoryIds: string[]): Promise<CourseAssessment[]> {
+    if (categoryIds.length === 0) return [];
+    const db = new RobleDbClient(authorizedFetch);
+
+    // Find which group this student belongs to for each category
+    const memberRows = await db.readTable<GroupMemberRow>("GroupMembers", { studentID: studentId });
+    if (memberRows.length === 0) return [];
+
+    const groupRows = await Promise.all(
+      memberRows.map((m) =>
+        db.readTable<GroupRow>("Groups", { _id: m.groupID }).then((r) => r[0])
+      )
+    );
+    const categoryToGroup = new Map<string, string>();
+    groupRows.forEach((g) => {
+      if (g && categoryIds.includes(g.categoryID)) {
+        categoryToGroup.set(g.categoryID, g._id);
+      }
+    });
+    if (categoryToGroup.size === 0) return [];
+
+    const serverNow = await db.getServerTime();
+
+    // Fetch all active assessments for the given categories in parallel
+    const assessmentsByCategory = await Promise.all(
+      [...categoryToGroup.keys()].map((catId) =>
+        db.readTable<AssessmentRow>("Assessments", { categoryId: catId, status: "active" })
+      )
+    );
+    const allAssessments = assessmentsByCategory.flat();
+    if (allAssessments.length === 0) return [];
+
+    const results = await Promise.all(
+      allAssessments.map(async (a): Promise<CourseAssessment | null> => {
+        const groupId = categoryToGroup.get(a.categoryId);
+        if (!groupId) return null;
+
+        const isExpired = new Date(a.deadline) <= serverNow;
+
+        const [peerMemberRows, existingEvalRows] = await Promise.all([
+          db.readTable<GroupMemberRow>("GroupMembers", { groupID: groupId }),
+          db.readTable<EvaluationRow>("Evaluations", {
+            assessmentId: a._id,
+            evaluatorId: studentId,
+          }),
+        ]);
+
+        const evaluatedIds = new Set(existingEvalRows.map((e) => e.evaluatedId));
+        const allPeerIds = peerMemberRows
+          .map((m) => m.studentID)
+          .filter((id) => id !== studentId);
+        const pendingPeerIds = isExpired
+          ? []
+          : allPeerIds.filter((id) => !evaluatedIds.has(id));
+
+        // Resolve names only for pending peers (display only)
+        const userRows = await Promise.all(
+          pendingPeerIds.map((id) =>
+            db.readTable<UserRow>("Users", { _id: id }).then((r) => r[0])
+          )
+        );
+        const pendingPeers = pendingPeerIds.map((userId, i) => ({
+          userId,
+          fullName: userRows[i]?.fullName ?? userRows[i]?.name ?? userId,
+        }));
+
+        return {
+          assessment: {
+            _id: a._id,
+            categoryId: a.categoryId,
+            title: a.title,
+            visibility: a.visibility,
+            timeWindowMinutes: a.timeWindowMinutes,
+            status: "active",
+            deadline: a.deadline,
+            createdAt: a.createdAt,
+          } as Assessment,
+          groupId,
+          pendingPeers,
+          evaluatedPeerCount: evaluatedIds.size,
+          totalPeerCount: allPeerIds.length,
+        };
+      })
+    );
+
+    return results.filter((r): r is CourseAssessment => r !== null);
   }
 
   async getCriteriaForAssessment(assessmentId: string): Promise<Criteria[]> {

@@ -6,15 +6,18 @@ import { NewCriteriaScore } from "@/src/features/evaluations/domain/entities/Cri
 import { NewEvaluation } from "@/src/features/evaluations/domain/entities/Evaluation";
 import { StudentResult } from "@/src/features/evaluations/domain/entities/StudentResult";
 import {
+  CourseAssessment,
   EvaluationRepository,
   PendingAssessment,
 } from "@/src/features/evaluations/domain/repositories/EvaluationRepository";
 
 type EvaluationState = {
   pendingAssessments: PendingAssessment[];
+  courseAssessments: CourseAssessment[];
   criteriaByAssessment: Record<string, Criteria[]>;
   myResults: StudentResult[];
   isLoadingPending: boolean;
+  isLoadingCourseAssessments: boolean;
   isLoadingResults: boolean;
   isSubmitting: boolean;
   error: string | null;
@@ -22,6 +25,7 @@ type EvaluationState = {
 
   init: (repo: EvaluationRepository) => void;
   fetchPendingAssessments: (studentId: string) => Promise<void>;
+  fetchAssessmentsForCourse: (studentId: string, categoryIds: string[]) => Promise<void>;
   fetchCriteria: (assessmentId: string) => Promise<void>;
   submitEvaluation: (
     evaluation: NewEvaluation,
@@ -34,9 +38,11 @@ type EvaluationState = {
 
 export const useEvaluationStore = create<EvaluationState>((set, get) => ({
   pendingAssessments: [],
+  courseAssessments: [],
   criteriaByAssessment: {},
   myResults: [],
   isLoadingPending: false,
+  isLoadingCourseAssessments: false,
   isLoadingResults: false,
   isSubmitting: false,
   error: null,
@@ -55,6 +61,20 @@ export const useEvaluationStore = create<EvaluationState>((set, get) => ({
       set({ error: (e as Error).message });
     } finally {
       set({ isLoadingPending: false });
+    }
+  },
+
+  fetchAssessmentsForCourse: async (studentId, categoryIds) => {
+    const { _repo } = get();
+    if (!_repo) throw new Error("EvaluationStore not initialized");
+    set({ isLoadingCourseAssessments: true, error: null });
+    try {
+      const assessments = await _repo.getAssessmentsForCourse(studentId, categoryIds);
+      set({ courseAssessments: assessments });
+    } catch (e) {
+      set({ error: (e as Error).message });
+    } finally {
+      set({ isLoadingCourseAssessments: false });
     }
   },
 
@@ -78,8 +98,14 @@ export const useEvaluationStore = create<EvaluationState>((set, get) => ({
     set({ isSubmitting: true, error: null });
     try {
       await _repo.submitEvaluation(evaluation, scores);
-      const pending = await _repo.getPendingAssessments(studentId);
-      set({ pendingAssessments: pending });
+      const [pending, courseAssessments] = await Promise.all([
+        _repo.getPendingAssessments(studentId),
+        _repo.getAssessmentsForCourse(
+          studentId,
+          [...new Set(get().courseAssessments.map((a) => a.assessment.categoryId))]
+        ),
+      ]);
+      set({ pendingAssessments: pending, courseAssessments });
     } catch (e) {
       set({ error: (e as Error).message });
       throw e;

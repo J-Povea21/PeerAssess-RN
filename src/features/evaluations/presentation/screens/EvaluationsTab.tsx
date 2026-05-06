@@ -5,7 +5,7 @@ import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { ActivityIndicator, Text } from "react-native-paper";
 
 import { useAuthStore } from "@/src/features/auth/presentation/store/useAuthStore";
-import { PendingAssessment } from "@/src/features/evaluations/domain/repositories/EvaluationRepository";
+import { CourseAssessment } from "@/src/features/evaluations/domain/repositories/EvaluationRepository";
 import { useEvaluationStore } from "@/src/features/evaluations/presentation/store/useEvaluationStore";
 import { useGroupStore } from "@/src/features/groups/presentation/store/useGroupStore";
 import { AppColors } from "@/src/theme/appColors";
@@ -27,40 +27,40 @@ function formatDuration(minutes: number): string {
 
 export default function EvaluationsTab({ courseId, navigation }: Props) {
   const { user } = useAuthStore();
-  const { pendingAssessments, isLoadingPending, fetchPendingAssessments, fetchCriteria } =
+  const { courseAssessments, isLoadingCourseAssessments, fetchAssessmentsForCourse, fetchCriteria } =
     useEvaluationStore();
   const { categoriesByCourse, fetchCategories } = useGroupStore();
 
-  useEffect(() => {
-    if (user?.id) fetchPendingAssessments(user.id);
-    fetchCategories(courseId);
-  }, [user?.id, courseId]);
-
   const categoryIds = useMemo(
-    () => new Set((categoriesByCourse[courseId] ?? []).map((c) => c._id)),
+    () => (categoriesByCourse[courseId] ?? []).map((c) => c._id),
     [categoriesByCourse, courseId]
   );
 
-  const courseAssessments = useMemo(
-    () => pendingAssessments.filter((pa) => categoryIds.has(pa.assessment.categoryId)),
-    [pendingAssessments, categoryIds]
-  );
+  useEffect(() => {
+    fetchCategories(courseId);
+  }, [courseId]);
 
-  const handleStartEvaluation = async (pa: PendingAssessment) => {
-    await fetchCriteria(pa.assessment._id);
+  useEffect(() => {
+    if (user?.id && categoryIds.length > 0) {
+      fetchAssessmentsForCourse(user.id, categoryIds);
+    }
+  }, [user?.id, categoryIds]);
+
+  const handleStartEvaluation = async (ca: CourseAssessment) => {
+    await fetchCriteria(ca.assessment._id);
     const criteria =
-      useEvaluationStore.getState().criteriaByAssessment[pa.assessment._id] ?? [];
+      useEvaluationStore.getState().criteriaByAssessment[ca.assessment._id] ?? [];
     navigation.navigate("EvaluationForm", {
-      assessmentId: pa.assessment._id,
-      assessmentTitle: pa.assessment.title,
-      deadline: pa.assessment.deadline,
-      peers: pa.peers,
+      assessmentId: ca.assessment._id,
+      assessmentTitle: ca.assessment.title,
+      deadline: ca.assessment.deadline,
+      peers: ca.pendingPeers,
       criteria,
       evaluatorId: user?.id ?? "",
     });
   };
 
-  if (isLoadingPending) {
+  if (isLoadingCourseAssessments) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator color={AppColors.olive} />
@@ -84,20 +84,21 @@ export default function EvaluationsTab({ courseId, navigation }: Props) {
 
   return (
     <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
-      {courseAssessments.map((pa) => {
-        const isExpired = new Date(pa.assessment.deadline) < new Date();
-        const canEvaluate = pa.peers.length > 0 && !isExpired;
+      {courseAssessments.map((ca) => {
+        const isExpired = new Date(ca.assessment.deadline) < new Date();
+        const canEvaluate = ca.pendingPeers.length > 0 && !isExpired;
+        const fullyEvaluated = ca.evaluatedPeerCount === ca.totalPeerCount && ca.totalPeerCount > 0;
 
         return (
           <TouchableOpacity
-            key={pa.assessment._id}
+            key={ca.assessment._id}
             style={[styles.card, !canEvaluate && styles.cardDisabled]}
             activeOpacity={canEvaluate ? 0.7 : 1}
-            onPress={() => canEvaluate && handleStartEvaluation(pa)}
+            onPress={() => canEvaluate && handleStartEvaluation(ca)}
           >
             <View style={styles.cardHeader}>
               <Text style={styles.cardTitle} numberOfLines={2}>
-                {pa.assessment.title}
+                {ca.assessment.title}
               </Text>
               <View
                 style={[
@@ -122,12 +123,12 @@ export default function EvaluationsTab({ courseId, navigation }: Props) {
 
             <View style={styles.metaRow}>
               <MaterialCommunityIcons
-                name={pa.assessment.visibility === "public" ? "eye-outline" : "lock-outline"}
+                name={ca.assessment.visibility === "public" ? "eye-outline" : "lock-outline"}
                 size={14}
                 color={AppColors.textMuted}
               />
               <Text style={styles.metaText}>
-                {pa.assessment.visibility === "public" ? "Pública" : "Privada"}
+                {ca.assessment.visibility === "public" ? "Pública" : "Privada"}
               </Text>
               <MaterialCommunityIcons
                 name="clock-outline"
@@ -136,7 +137,7 @@ export default function EvaluationsTab({ courseId, navigation }: Props) {
                 style={{ marginLeft: 12 }}
               />
               <Text style={styles.metaText}>
-                {formatDuration(pa.assessment.timeWindowMinutes)}
+                {formatDuration(ca.assessment.timeWindowMinutes)}
               </Text>
             </View>
 
@@ -146,13 +147,15 @@ export default function EvaluationsTab({ courseId, navigation }: Props) {
                 size={14}
                 color={AppColors.textMuted}
               />
-              <Text style={styles.metaText}>{formatDeadline(pa.assessment.deadline)}</Text>
+              <Text style={styles.metaText}>{formatDeadline(ca.assessment.deadline)}</Text>
             </View>
 
             <View style={styles.actionRow}>
               {canEvaluate ? (
                 <View style={[styles.actionBadge, { backgroundColor: AppColors.olive + "1F" }]}>
-                  <Text style={[styles.actionText, { color: AppColors.olive }]}>Evaluar →</Text>
+                  <Text style={[styles.actionText, { color: AppColors.olive }]}>
+                    Evaluar → ({ca.pendingPeers.length} pendiente{ca.pendingPeers.length !== 1 ? "s" : ""})
+                  </Text>
                 </View>
               ) : (
                 <View
@@ -160,7 +163,7 @@ export default function EvaluationsTab({ courseId, navigation }: Props) {
                 >
                   <MaterialCommunityIcons name="check" size={12} color={AppColors.textMuted} />
                   <Text style={[styles.actionText, { color: AppColors.textMuted }]}>
-                    {" "}Evaluado
+                    {" "}{fullyEvaluated ? "Evaluado ✓" : "Sin compañeros"}
                   </Text>
                 </View>
               )}
