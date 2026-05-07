@@ -1,6 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ActivityIndicator, FAB, Text } from "react-native-paper";
@@ -30,13 +31,15 @@ export default function StudentHomeScreen({ navigation }: { navigation: any }) {
   } = useEvaluationStore();
   const { categoriesByCourse, fetchCategories } = useGroupStore();
 
-  useEffect(() => {
-    if (user?.id) {
-      fetchCoursesByStudent(user.id);
-      fetchMyResults(user.id);
-      fetchPendingAssessments(user.id);
-    }
-  }, [user?.id]);
+  useFocusEffect(
+    useCallback(() => {
+      if (user?.id) {
+        fetchCoursesByStudent(user.id);
+        fetchMyResults(user.id);
+        fetchPendingAssessments(user.id);
+      }
+    }, [user?.id])
+  );
 
   // Load categories for each enrolled course so pending assessments can be linked back to a course.
   useEffect(() => {
