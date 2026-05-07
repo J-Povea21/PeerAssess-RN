@@ -111,20 +111,32 @@ export default function StudentHomeScreen({ navigation }: { navigation: any }) {
         ) : (
           recentResults.map((result) => (
             <View key={result.assessmentId} style={styles.resultCard}>
-              <View style={styles.resultScoreBadge}>
-                <Text style={styles.resultScoreText}>{result.averageScore.toFixed(1)}</Text>
+              <View style={styles.resultCardHeader}>
+                <View style={styles.resultCardTitleBlock}>
+                  <Text style={styles.resultTitle} numberOfLines={2}>
+                    {result.assessmentTitle}
+                  </Text>
+                  <Text style={styles.resultPublicLabel}>Resultado público</Text>
+                </View>
+                <View style={styles.resultScoreBlock}>
+                  <Text style={styles.resultScoreValue}>{result.averageScore.toFixed(1)}</Text>
+                  <Text style={styles.resultScoreMax}> / 5.0</Text>
+                </View>
               </View>
-              <View style={styles.resultInfo}>
-                <Text style={styles.resultTitle} numberOfLines={2}>
-                  {result.assessmentTitle}
-                </Text>
-                <Text style={styles.resultMeta}>
-                  {result.evaluationCount}{" "}
-                  {result.evaluationCount === 1
-                    ? "evaluación recibida"
-                    : "evaluaciones recibidas"}
-                </Text>
-              </View>
+              {result.criteriaAverages.map((ca) => (
+                <View key={ca.criteriaId} style={styles.resultCriteriaRow}>
+                  <Text style={styles.resultCriteriaName}>{ca.criteriaName}</Text>
+                  <View style={styles.resultProgressTrack}>
+                    <View
+                      style={[
+                        styles.resultProgressFill,
+                        { width: `${Math.min((ca.average / 5) * 100, 100)}%` as any },
+                      ]}
+                    />
+                  </View>
+                  <Text style={styles.resultCriteriaScore}>{ca.average.toFixed(1)}</Text>
+                </View>
+              ))}
             </View>
           ))
         )}
@@ -242,29 +254,40 @@ const styles = StyleSheet.create({
   resultCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 14,
-    padding: 14,
-    marginBottom: 10,
-    flexDirection: "row",
-    alignItems: "center",
+    padding: 16,
+    marginBottom: 12,
     shadowColor: "#000000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
     elevation: 2,
   },
-  resultScoreBadge: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: AppColors.wheat,
-    borderWidth: 2,
-    borderColor: AppColors.olive,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 14,
+  resultCardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 12,
   },
-  resultScoreText: { fontSize: 16, fontWeight: "700", color: AppColors.textDark },
-  resultInfo: { flex: 1 },
-  resultTitle: { fontSize: 14, fontWeight: "600", color: AppColors.textDark, marginBottom: 2 },
-  resultMeta: { fontSize: 12, color: AppColors.textMuted },
+  resultCardTitleBlock: { flex: 1, marginRight: 12 },
+  resultTitle: { fontSize: 14, fontWeight: "700", color: AppColors.textDark, marginBottom: 2 },
+  resultPublicLabel: { fontSize: 12, color: AppColors.textMuted },
+  resultScoreBlock: { flexDirection: "row", alignItems: "flex-end" },
+  resultScoreValue: { fontSize: 22, fontWeight: "700", color: AppColors.olive },
+  resultScoreMax: { fontSize: 12, color: AppColors.textMuted, marginBottom: 3 },
+  resultCriteriaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  resultCriteriaName: { fontSize: 12, color: AppColors.textDark, width: 90 },
+  resultProgressTrack: {
+    flex: 1,
+    height: 6,
+    backgroundColor: AppColors.beige,
+    borderRadius: 3,
+    overflow: "hidden",
+    marginHorizontal: 8,
+  },
+  resultProgressFill: { height: 6, backgroundColor: AppColors.olive, borderRadius: 3 },
+  resultCriteriaScore: { fontSize: 12, fontWeight: "700", color: AppColors.olive, width: 28, textAlign: "right" },
 });

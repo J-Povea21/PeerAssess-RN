@@ -9,28 +9,29 @@ import { CriteriaAverage, StudentResult } from "../../../domain/entities/Student
 import { EvaluationDataSource } from "../EvaluationDataSource";
 import { CourseAssessment, PendingAssessment } from "../../../domain/repositories/EvaluationRepository";
 
+// Raw Roble column names — all FK suffixes are uppercase "ID"
 type AssessmentRow = {
   _id: string;
-  categoryId: string;
+  categoryID: string;
   title: string;
   visibility: "public" | "private";
-  timeWindowMinutes: number;
+  timeWindow: number;
   status: string;
   deadline: string;
   createdAt: string;
 };
-type CriteriaRow = { _id: string; assessmentId: string; name: string; weight: number };
+type CriteriaRow = { _id: string; assessmentID: string; name: string; weight: number };
 type GroupMemberRow = { _id: string; groupID: string; studentID: string };
 type GroupRow = { _id: string; name: string; categoryID: string };
 type EvaluationRow = {
   _id: string;
-  assessmentId: string;
-  evaluatorId: string;
-  evaluatedId: string;
+  assessmentID: string;
+  evaluatorID: string;
+  evaluatedID: string;
   totalScore: number;
   submittedAt: string;
 };
-type CriteriaScoreRow = { _id: string; evaluationId: string; criteriaId: string; score: number };
+type CriteriaScoreRow = { _id: string; evaluationID: string; criteriaID: string; score: number };
 type UserRow = { _id: string; name: string; fullName?: string };
 
 export class EvaluationRemoteDataSourceImpl implements EvaluationDataSource {
@@ -56,7 +57,7 @@ export class EvaluationRemoteDataSourceImpl implements EvaluationDataSource {
     const serverNow = await db.getServerTime();
     const assessmentsByCategory = await Promise.all(
       [...categoryToGroup.keys()].map((catId) =>
-        db.readTable<AssessmentRow>("Assessments", { categoryId: catId, status: "active" })
+        db.readTable<AssessmentRow>("Assessments", { categoryID: catId, status: "active" })
       )
     );
     const activeAssessments = assessmentsByCategory
@@ -66,18 +67,18 @@ export class EvaluationRemoteDataSourceImpl implements EvaluationDataSource {
 
     const results = await Promise.all(
       activeAssessments.map(async (a): Promise<PendingAssessment | null> => {
-        const groupId = categoryToGroup.get(a.categoryId);
+        const groupId = categoryToGroup.get(a.categoryID);
         if (!groupId) return null;
 
         const [peerMemberRows, existingEvalRows] = await Promise.all([
           db.readTable<GroupMemberRow>("GroupMembers", { groupID: groupId }),
           db.readTable<EvaluationRow>("Evaluations", {
-            assessmentId: a._id,
-            evaluatorId: studentId,
+            assessmentID: a._id,
+            evaluatorID: studentId,
           }),
         ]);
 
-        const evaluatedIds = new Set(existingEvalRows.map((e) => e.evaluatedId));
+        const evaluatedIds = new Set(existingEvalRows.map((e) => e.evaluatedID));
         const peerIds = peerMemberRows
           .map((m) => m.studentID)
           .filter((id) => id !== studentId && !evaluatedIds.has(id));
@@ -97,10 +98,10 @@ export class EvaluationRemoteDataSourceImpl implements EvaluationDataSource {
         return {
           assessment: {
             _id: a._id,
-            categoryId: a.categoryId,
+            categoryId: a.categoryID,
             title: a.title,
             visibility: a.visibility,
-            timeWindowMinutes: a.timeWindowMinutes,
+            timeWindowMinutes: a.timeWindow,
             status: "active",
             deadline: a.deadline,
             createdAt: a.createdAt,
@@ -118,7 +119,6 @@ export class EvaluationRemoteDataSourceImpl implements EvaluationDataSource {
     if (categoryIds.length === 0) return [];
     const db = new RobleDbClient(authorizedFetch);
 
-    // Find which group this student belongs to for each category
     const memberRows = await db.readTable<GroupMemberRow>("GroupMembers", { studentID: studentId });
     if (memberRows.length === 0) return [];
 
@@ -137,10 +137,9 @@ export class EvaluationRemoteDataSourceImpl implements EvaluationDataSource {
 
     const serverNow = await db.getServerTime();
 
-    // Fetch all active assessments for the given categories in parallel
     const assessmentsByCategory = await Promise.all(
       [...categoryToGroup.keys()].map((catId) =>
-        db.readTable<AssessmentRow>("Assessments", { categoryId: catId, status: "active" })
+        db.readTable<AssessmentRow>("Assessments", { categoryID: catId, status: "active" })
       )
     );
     const allAssessments = assessmentsByCategory.flat();
@@ -148,7 +147,7 @@ export class EvaluationRemoteDataSourceImpl implements EvaluationDataSource {
 
     const results = await Promise.all(
       allAssessments.map(async (a): Promise<CourseAssessment | null> => {
-        const groupId = categoryToGroup.get(a.categoryId);
+        const groupId = categoryToGroup.get(a.categoryID);
         if (!groupId) return null;
 
         const isExpired = new Date(a.deadline) <= serverNow;
@@ -156,12 +155,12 @@ export class EvaluationRemoteDataSourceImpl implements EvaluationDataSource {
         const [peerMemberRows, existingEvalRows] = await Promise.all([
           db.readTable<GroupMemberRow>("GroupMembers", { groupID: groupId }),
           db.readTable<EvaluationRow>("Evaluations", {
-            assessmentId: a._id,
-            evaluatorId: studentId,
+            assessmentID: a._id,
+            evaluatorID: studentId,
           }),
         ]);
 
-        const evaluatedIds = new Set(existingEvalRows.map((e) => e.evaluatedId));
+        const evaluatedIds = new Set(existingEvalRows.map((e) => e.evaluatedID));
         const allPeerIds = peerMemberRows
           .map((m) => m.studentID)
           .filter((id) => id !== studentId);
@@ -169,7 +168,6 @@ export class EvaluationRemoteDataSourceImpl implements EvaluationDataSource {
           ? []
           : allPeerIds.filter((id) => !evaluatedIds.has(id));
 
-        // Resolve names only for pending peers (display only)
         const userRows = await Promise.all(
           pendingPeerIds.map((id) =>
             db.readTable<UserRow>("Users", { _id: id }).then((r) => r[0])
@@ -183,10 +181,10 @@ export class EvaluationRemoteDataSourceImpl implements EvaluationDataSource {
         return {
           assessment: {
             _id: a._id,
-            categoryId: a.categoryId,
+            categoryId: a.categoryID,
             title: a.title,
             visibility: a.visibility,
-            timeWindowMinutes: a.timeWindowMinutes,
+            timeWindowMinutes: a.timeWindow,
             status: "active",
             deadline: a.deadline,
             createdAt: a.createdAt,
@@ -204,10 +202,10 @@ export class EvaluationRemoteDataSourceImpl implements EvaluationDataSource {
 
   async getCriteriaForAssessment(assessmentId: string): Promise<Criteria[]> {
     const db = new RobleDbClient(authorizedFetch);
-    const rows = await db.readTable<CriteriaRow>("Criteria", { assessmentId });
+    const rows = await db.readTable<CriteriaRow>("Criteria", { assessmentID: assessmentId });
     return rows.map((r): Criteria => ({
       _id: r._id,
-      assessmentId: r.assessmentId,
+      assessmentId: r.assessmentID,
       name: r.name,
       weight: r.weight,
     }));
@@ -231,9 +229,9 @@ export class EvaluationRemoteDataSourceImpl implements EvaluationDataSource {
     }
 
     const duplicates = await db.readTable<EvaluationRow>("Evaluations", {
-      assessmentId: evaluation.assessmentId,
-      evaluatorId: evaluation.evaluatorId,
-      evaluatedId: evaluation.evaluatedId,
+      assessmentID: evaluation.assessmentId,
+      evaluatorID: evaluation.evaluatorId,
+      evaluatedID: evaluation.evaluatedId,
     });
     if (duplicates.length > 0) {
       throw new Error("Ya enviaste una evaluación para este compañero.");
@@ -242,17 +240,17 @@ export class EvaluationRemoteDataSourceImpl implements EvaluationDataSource {
     const totalScore = scores.reduce((sum, s) => sum + s.score, 0) / scores.length;
 
     await db.insertRecord("Evaluations", {
-      assessmentId: evaluation.assessmentId,
-      evaluatorId: evaluation.evaluatorId,
-      evaluatedId: evaluation.evaluatedId,
+      assessmentID: evaluation.assessmentId,
+      evaluatorID: evaluation.evaluatorId,
+      evaluatedID: evaluation.evaluatedId,
       totalScore,
       submittedAt: new Date().toISOString(),
     });
 
     const inserted = await db.readTable<EvaluationRow>("Evaluations", {
-      assessmentId: evaluation.assessmentId,
-      evaluatorId: evaluation.evaluatorId,
-      evaluatedId: evaluation.evaluatedId,
+      assessmentID: evaluation.assessmentId,
+      evaluatorID: evaluation.evaluatorId,
+      evaluatedID: evaluation.evaluatedId,
     });
     if (inserted.length === 0) throw new Error("Error al verificar la evaluación enviada.");
     const evaluationId = inserted[inserted.length - 1]._id;
@@ -260,8 +258,8 @@ export class EvaluationRemoteDataSourceImpl implements EvaluationDataSource {
     await Promise.all(
       scores.map((s) =>
         db.insertRecord("CriteriaScores", {
-          evaluationId,
-          criteriaId: s.criteriaId,
+          evaluationID: evaluationId,
+          criteriaID: s.criteriaId,
           score: s.score,
         })
       )
@@ -272,23 +270,23 @@ export class EvaluationRemoteDataSourceImpl implements EvaluationDataSource {
     const db = new RobleDbClient(authorizedFetch);
 
     const evalRows = await db.readTable<EvaluationRow>("Evaluations", {
-      evaluatedId: studentId,
+      evaluatedID: studentId,
     });
     if (evalRows.length === 0) return [];
 
     const evalsByAssessment = new Map<string, EvaluationRow[]>();
     for (const e of evalRows) {
-      if (!evalsByAssessment.has(e.assessmentId)) {
-        evalsByAssessment.set(e.assessmentId, []);
+      if (!evalsByAssessment.has(e.assessmentID)) {
+        evalsByAssessment.set(e.assessmentID, []);
       }
-      evalsByAssessment.get(e.assessmentId)!.push(e);
+      evalsByAssessment.get(e.assessmentID)!.push(e);
     }
 
     const results = await Promise.all(
       [...evalsByAssessment.entries()].map(async ([assessmentId, evals]) => {
         const [assessmentRows, criteriaRows] = await Promise.all([
           db.readTable<AssessmentRow>("Assessments", { _id: assessmentId }),
-          db.readTable<CriteriaRow>("Criteria", { assessmentId }),
+          db.readTable<CriteriaRow>("Criteria", { assessmentID: assessmentId }),
         ]);
 
         if (assessmentRows.length === 0) return null;
@@ -297,7 +295,7 @@ export class EvaluationRemoteDataSourceImpl implements EvaluationDataSource {
 
         const allScoreRows = await Promise.all(
           evals.map((e) =>
-            db.readTable<CriteriaScoreRow>("CriteriaScores", { evaluationId: e._id })
+            db.readTable<CriteriaScoreRow>("CriteriaScores", { evaluationID: e._id })
           )
         ).then((r) => r.flat());
 
@@ -305,7 +303,7 @@ export class EvaluationRemoteDataSourceImpl implements EvaluationDataSource {
           evals.reduce((sum, e) => sum + e.totalScore, 0) / evals.length;
 
         const criteriaAverages: CriteriaAverage[] = criteriaRows.map((c) => {
-          const cScores = allScoreRows.filter((s) => s.criteriaId === c._id);
+          const cScores = allScoreRows.filter((s) => s.criteriaID === c._id);
           const avg =
             cScores.length > 0
               ? cScores.reduce((sum, s) => sum + s.score, 0) / cScores.length
