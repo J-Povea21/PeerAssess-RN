@@ -13,8 +13,10 @@ import { AppColors } from "@/src/theme/appColors";
 
 const BG_COLORS = [AppColors.beige, "#FFFFFF", AppColors.rose + "0D"] as const;
 
-function generateAutoFeedback(result: StudentResult): string {
-  if (result.criteriaAverages.length === 0) return "";
+type Segment = { text: string; bold: boolean };
+
+function generateAutoFeedback(result: StudentResult): Segment[] {
+  if (result.criteriaAverages.length === 0) return [];
   const sorted = [...result.criteriaAverages].sort((a, b) => b.average - a.average);
   const best = sorted[0];
   const worst = sorted[sorted.length - 1];
@@ -25,13 +27,19 @@ function generateAutoFeedback(result: StudentResult): string {
   else if (avg >= 3.5) opener = "Tuviste un buen desempeño general en esta evaluación.";
   else opener = "Esta evaluación muestra áreas con potencial de mejora.";
 
-  const bestSentence = ` Tu fortaleza más destacada fue ${best.criteriaName.toLowerCase()} (${best.average.toFixed(1)}/5).`;
-  const improveSentence =
-    worst.criteriaId !== best.criteriaId
-      ? ` Considera trabajar en ${worst.criteriaName.toLowerCase()} (${worst.average.toFixed(1)}/5) para tu próxima actividad.`
-      : "";
+  const segments: Segment[] = [{ text: opener, bold: false }];
 
-  return `${opener}${bestSentence}${improveSentence}`;
+  segments.push({ text: " Tu fortaleza más destacada fue ", bold: false });
+  segments.push({ text: best.criteriaName.toLowerCase(), bold: true });
+  segments.push({ text: ` (${best.average.toFixed(1)}/5).`, bold: false });
+
+  if (worst.criteriaId !== best.criteriaId) {
+    segments.push({ text: " Considera trabajar en ", bold: false });
+    segments.push({ text: worst.criteriaName.toLowerCase(), bold: true });
+    segments.push({ text: ` (${worst.average.toFixed(1)}/5) para tu próxima actividad.`, bold: false });
+  }
+
+  return segments;
 }
 
 export default function StudentResultsScreen() {
@@ -56,8 +64,8 @@ export default function StudentResultsScreen() {
     [myResults, selectedId]
   );
 
-  const feedback = useMemo(
-    () => (selected ? generateAutoFeedback(selected) : ""),
+  const feedback = useMemo<Segment[]>(
+    () => (selected ? generateAutoFeedback(selected) : []),
     [selected]
   );
 
@@ -114,7 +122,13 @@ export default function StudentResultsScreen() {
               {feedback.length > 0 && (
                 <View style={styles.feedbackCard}>
                   <Text style={styles.feedbackTitle}>RETROALIMENTACIÓN AUTOMÁTICA</Text>
-                  <Text style={styles.feedbackText}>{feedback}</Text>
+                  <Text style={styles.feedbackText}>
+                    {feedback.map((seg, i) => (
+                      <Text key={i} style={seg.bold ? styles.feedbackBold : undefined}>
+                        {seg.text}
+                      </Text>
+                    ))}
+                  </Text>
                 </View>
               )}
 
@@ -256,6 +270,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   feedbackText: { fontSize: 14, color: AppColors.textDark, lineHeight: 20 },
+  feedbackBold: { fontWeight: "700", color: AppColors.textDark },
   sectionLabel: {
     fontSize: 11,
     fontWeight: "600",
