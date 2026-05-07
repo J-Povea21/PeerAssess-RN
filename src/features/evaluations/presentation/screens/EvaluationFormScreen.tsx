@@ -159,7 +159,7 @@ export default function EvaluationFormScreen({ navigation, route }: Props) {
 
   return (
     <LinearGradient colors={BG_COLORS} style={styles.container}>
-      <Appbar.Header style={[styles.appbar, { paddingTop: insets.top }]}>
+      <Appbar.Header style={styles.appbar}>
         <Appbar.BackAction color={AppColors.textDark} onPress={() => navigation.goBack()} />
         <Appbar.Content
           title={`Evaluar a ${currentPeer.fullName}`}
@@ -248,10 +248,9 @@ export default function EvaluationFormScreen({ navigation, route }: Props) {
             <Text style={styles.prevButtonText}>Anterior</Text>
           </TouchableOpacity>
         )}
-        <View style={{ flex: 1 }} />
         {isLastPeer ? (
           <TouchableOpacity
-            style={[styles.nextButton, isSubmitting && styles.buttonDisabled]}
+            style={[styles.nextButton, styles.nextButtonFull, isSubmitting && styles.buttonDisabled]}
             onPress={handleSubmit}
             disabled={isSubmitting}
           >
@@ -262,7 +261,10 @@ export default function EvaluationFormScreen({ navigation, route }: Props) {
             )}
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
+          <TouchableOpacity
+            style={[styles.nextButton, styles.nextButtonFull]}
+            onPress={handleNext}
+          >
             <Text style={styles.nextButtonText}>Siguiente</Text>
           </TouchableOpacity>
         )}
@@ -353,11 +355,8 @@ const styles = StyleSheet.create({
   bottomBar: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingTop: 12,
-    backgroundColor: "#FFFFFF",
-    borderTopWidth: 1,
-    borderTopColor: AppColors.beige,
   },
   prevButton: {
     paddingVertical: 14,
@@ -366,13 +365,16 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: AppColors.olive,
   },
-  prevButtonText: { fontSize: 15, fontWeight: "600", color: AppColors.olive },
+  prevButtonText: { fontSize: 15, fontWeight: "600", color: AppColors.olive, textAlign: "center" },
   nextButton: {
     paddingVertical: 14,
     paddingHorizontal: 28,
     borderRadius: 14,
     backgroundColor: AppColors.olive,
   },
-  nextButtonText: { fontSize: 15, fontWeight: "600", color: "#FFFFFF" },
+  nextButtonFull: {
+    flex: 1,
+  },
+  nextButtonText: { fontSize: 15, fontWeight: "600", color: "#FFFFFF", textAlign: "center" },
   buttonDisabled: { opacity: 0.6 },
 });

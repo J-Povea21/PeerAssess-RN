@@ -1,6 +1,6 @@
 // src/features/evaluations/presentation/screens/EvaluationsTab.tsx
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { ActivityIndicator, Text } from "react-native-paper";
 
@@ -31,6 +31,8 @@ export default function EvaluationsTab({ courseId, navigation }: Props) {
     useEvaluationStore();
   const { categoriesByCourse, fetchCategories } = useGroupStore();
 
+  const [now, setNow] = useState(() => new Date());
+
   const categoryIds = useMemo(
     () => (categoriesByCourse[courseId] ?? []).map((c) => c._id),
     [categoriesByCourse, courseId]
@@ -45,6 +47,11 @@ export default function EvaluationsTab({ courseId, navigation }: Props) {
       fetchAssessmentsForCourse(user.id, categoryIds);
     }
   }, [user?.id, categoryIds]);
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleStartEvaluation = async (ca: CourseAssessment) => {
     await fetchCriteria(ca.assessment._id);
@@ -85,7 +92,7 @@ export default function EvaluationsTab({ courseId, navigation }: Props) {
   return (
     <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
       {courseAssessments.map((ca) => {
-        const isExpired = new Date(ca.assessment.deadline) < new Date();
+        const isExpired = new Date(ca.assessment.deadline) < now;
         const canEvaluate = ca.pendingPeers.length > 0 && !isExpired;
         const fullyEvaluated = ca.evaluatedPeerCount === ca.totalPeerCount && ca.totalPeerCount > 0;
 
