@@ -1,10 +1,9 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React from "react";
-import { StyleSheet, View } from "react-native";
-import { Text } from "react-native-paper";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 
 import ProfileScreen from "@/src/features/auth/presentation/screens/ProfileScreen";
+import StudentResultsScreen from "@/src/features/evaluations/presentation/screens/StudentResultsScreen";
 import { AppColors } from "@/src/theme/appColors";
 import HomeStackNavigator from "./HomeStackNavigator";
 import CoursesStackNavigator from "./CoursesStackNavigator";
@@ -17,23 +16,6 @@ const TAB_ICONS: Record<string, keyof typeof MaterialCommunityIcons.glyphMap> = 
   Results: "chart-bar",
   Profile: "account-outline",
 };
-
-function ResultsPlaceholder() {
-  return (
-    <View style={styles.placeholder}>
-      <MaterialCommunityIcons
-        name="chart-bar"
-        size={48}
-        color={AppColors.textMuted}
-        style={styles.placeholderIcon}
-      />
-      <Text style={styles.placeholderTitle}>Sin resultados aún</Text>
-      <Text style={styles.placeholderSub}>
-        Los resultados aparecerán aquí cuando estén publicados
-      </Text>
-    </View>
-  );
-}
 
 export default function StudentTabsNavigator() {
   return (
@@ -64,7 +46,7 @@ export default function StudentTabsNavigator() {
       />
       <Tab.Screen
         name="Results"
-        component={ResultsPlaceholder}
+        component={StudentResultsScreen}
         options={{ tabBarLabel: "Resultados" }}
       />
       <Tab.Screen
@@ -76,27 +58,3 @@ export default function StudentTabsNavigator() {
   );
 }
 
-const styles = StyleSheet.create({
-  placeholder: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: AppColors.beige,
-    padding: 32,
-  },
-  placeholderIcon: {
-    opacity: 0.5,
-  },
-  placeholderTitle: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: AppColors.textMuted,
-    marginTop: 12,
-  },
-  placeholderSub: {
-    fontSize: 13,
-    color: AppColors.textMuted,
-    marginTop: 8,
-    textAlign: "center",
-  },
-});

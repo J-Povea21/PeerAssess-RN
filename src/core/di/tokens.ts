@@ -5,4 +5,6 @@ export const TOKENS = {
   CourseRepo: Symbol("CourseRepo"),
   GroupRemoteDS: Symbol("GroupRemoteDS"),
   GroupRepo: Symbol("GroupRepo"),
+  EvaluationRemoteDS: Symbol("EvaluationRemoteDS"),
+  EvaluationRepo: Symbol("EvaluationRepo"),
 } as const;

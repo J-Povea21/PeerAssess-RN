@@ -22,6 +22,7 @@ export default function JoinCourseScreen({ navigation }: { navigation: any }) {
   const [showSuccess, setShowSuccess] = useState(false);
   const { user } = useAuthStore();
   const { joinCourse, error, clearError } = useCourseStore();
+  const isDisabled = isJoining || !code.trim();
 
   const handleJoin = async () => {
     const trimmed = code.trim().toUpperCase();
@@ -55,7 +56,6 @@ export default function JoinCourseScreen({ navigation }: { navigation: any }) {
           onChangeText={(text) => setCode(text.toUpperCase())}
           style={styles.input}
           contentStyle={styles.inputContent}
-          textAlign="center"
           autoCapitalize="characters"
           placeholder="ABC123"
           disabled={isJoining}
@@ -66,11 +66,11 @@ export default function JoinCourseScreen({ navigation }: { navigation: any }) {
         <Button
           mode="contained"
           onPress={handleJoin}
-          disabled={isJoining || !code.trim()}
+          disabled={isDisabled}
           buttonColor={AppColors.olive}
           contentStyle={styles.buttonContent}
-          labelStyle={styles.buttonLabel}
-          style={styles.button}
+          labelStyle={[styles.buttonLabel, isDisabled && styles.buttonLabelDisabled]}
+          style={[styles.button, isDisabled && styles.buttonDisabled]}
         >
           {isJoining ? (
             <ActivityIndicator color="#FFFFFF" size={24} />
@@ -143,6 +143,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     letterSpacing: 6,
     color: AppColors.olive,
+    textAlign: "center",
   },
   inputOutline: {
     borderWidth: 0,
@@ -159,6 +160,12 @@ const styles = StyleSheet.create({
     width: "100%",
     borderRadius: 14,
     elevation: 0,
+  },
+  buttonDisabled: {
+    backgroundColor: AppColors.olive + "80",
+  },
+  buttonLabelDisabled: {
+    color: "#FFFFFFCC",
   },
   snackbarSuccess: {
     backgroundColor: AppColors.olive,

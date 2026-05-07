@@ -8,9 +8,10 @@ import StatCard from "../StatCard";
 
 type Props = {
   course: Course;
+  pendingEvaluationCount?: number;
 };
 
-export default function InfoTab({ course }: Props) {
+export default function InfoTab({ course, pendingEvaluationCount }: Props) {
   const isActive = course.status === "active";
   const statusColor = isActive ? AppColors.olive : AppColors.salmon;
   const statusLabel = isActive ? "Activo" : "Pendiente";
@@ -49,8 +50,8 @@ export default function InfoTab({ course }: Props) {
         <View style={styles.statSpacer} />
         <StatCard
           icon="clipboard-check-outline"
-          value={course.evaluationCount}
-          label="Evaluaciones"
+          value={pendingEvaluationCount ?? 0}
+          label="Pendientes"
           tint={AppColors.salmon}
         />
       </View>

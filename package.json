@@ -71,6 +71,10 @@
     ],
     "types": [
       "jest"
+    ],
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/.claude/"
     ]
   },
   "private": true,

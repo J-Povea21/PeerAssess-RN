@@ -1,17 +1,20 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { Appbar, Text } from "react-native-paper";
 
+import { useAuthStore } from "@/src/features/auth/presentation/store/useAuthStore";
 import CourseTabBar, {
   CourseTabKey,
 } from "@/src/features/courses/presentation/components/CourseTabBar";
 import CategoriasTab from "@/src/features/groups/presentation/components/CategoriasTab";
-import EvaluacionesPlaceholderTab from "@/src/features/courses/presentation/components/tabs/EvaluacionesPlaceholderTab";
+import EvaluationsTab from "@/src/features/evaluations/presentation/screens/EvaluationsTab";
 import InfoTab from "@/src/features/courses/presentation/components/tabs/InfoTab";
 import MembersTab from "@/src/features/courses/presentation/components/tabs/MembersTab";
 import { useCourseStore } from "@/src/features/courses/presentation/store/useCourseStore";
+import { useEvaluationStore } from "@/src/features/evaluations/presentation/store/useEvaluationStore";
+import { useGroupStore } from "@/src/features/groups/presentation/store/useGroupStore";
 import { AppColors } from "@/src/theme/appColors";
 
 const BG_COLORS = [AppColors.beige, "#FFFFFF", AppColors.rose + "0D"] as const;
@@ -23,22 +26,40 @@ type Props = {
 
 export default function CourseDetailScreen({ navigation, route }: Props) {
   const { courseId } = route.params;
+  const { user } = useAuthStore();
   const course = useCourseStore((s) => s.courses.find((c) => c._id === courseId));
+  const { pendingAssessments, fetchPendingAssessments } = useEvaluationStore();
+  const { categoriesByCourse, fetchCategories } = useGroupStore();
   const [activeTab, setActiveTab] = useState<CourseTabKey>("info");
+
+  useEffect(() => {
+    if (user?.id) fetchPendingAssessments(user.id);
+    fetchCategories(courseId);
+  }, [user?.id, courseId]);
+
+  const pendingEvaluationCount = useMemo(() => {
+    const categoryIds = new Set(
+      (categoriesByCourse[courseId] ?? []).map((c) => c._id)
+    );
+    if (categoryIds.size === 0) return 0;
+    return pendingAssessments
+      .filter((pa) => categoryIds.has(pa.assessment.categoryId))
+      .reduce((sum, pa) => sum + pa.peers.length, 0);
+  }, [pendingAssessments, categoriesByCourse, courseId]);
 
   const tabContent = useMemo(() => {
     if (!course) return null;
     switch (activeTab) {
       case "info":
-        return <InfoTab course={course} />;
+        return <InfoTab course={course} pendingEvaluationCount={pendingEvaluationCount} />;
       case "categorias":
         return <CategoriasTab courseId={courseId} navigation={navigation} />;
       case "evaluaciones":
-        return <EvaluacionesPlaceholderTab />;
+        return <EvaluationsTab courseId={courseId} navigation={navigation} />;
       case "miembros":
         return <MembersTab courseId={course._id} />;
     }
-  }, [activeTab, course, courseId, navigation]);
+  }, [activeTab, course, courseId, navigation, pendingEvaluationCount]);
 
   if (!course) {
     return (

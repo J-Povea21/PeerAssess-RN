@@ -109,9 +109,9 @@ export default function LoginScreen() {
                   mode="contained"
                   onPress={handleLogin}
                   disabled={!canSubmit}
-                  style={styles.button}
+                  style={[styles.button, !canSubmit && styles.buttonDisabled]}
                   contentStyle={styles.buttonContent}
-                  labelStyle={styles.buttonLabel}
+                  labelStyle={[styles.buttonLabel, !canSubmit && styles.buttonLabelDisabled]}
                   buttonColor={AppColors.olive}
                   textColor="#FFFFFF"
                 >
@@ -177,6 +177,12 @@ const styles = StyleSheet.create({
   },
   button: {
     borderRadius: 14,
+  },
+  buttonDisabled: {
+    backgroundColor: AppColors.olive + "80",
+  },
+  buttonLabelDisabled: {
+    color: "#FFFFFFCC",
   },
   buttonContent: {
     height: 52,

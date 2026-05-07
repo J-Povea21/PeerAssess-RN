@@ -1,11 +1,13 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ActivityIndicator, FAB, Text } from "react-native-paper";
 
 import { useAuthStore } from "@/src/features/auth/presentation/store/useAuthStore";
+import { useEvaluationStore } from "@/src/features/evaluations/presentation/store/useEvaluationStore";
+import { useGroupStore } from "@/src/features/groups/presentation/store/useGroupStore";
 import { AppColors } from "@/src/theme/appColors";
 import CourseCard from "../components/CourseCard";
 import PendingBanner from "../components/PendingBanner";
@@ -17,12 +19,35 @@ export default function CourseListScreen({ navigation }: { navigation: any }) {
   const insets = useSafeAreaInsets();
   const { user } = useAuthStore();
   const { courses, isLoading, fetchCoursesByStudent } = useCourseStore();
+  const { pendingAssessments, fetchPendingAssessments } = useEvaluationStore();
+  const { categoriesByCourse, fetchCategories } = useGroupStore();
 
   useEffect(() => {
     if (user?.id) {
       fetchCoursesByStudent(user.id);
+      fetchPendingAssessments(user.id);
     }
-  }, [user?.id, fetchCoursesByStudent]);
+  }, [user?.id]);
+
+  useEffect(() => {
+    courses.forEach((c) => {
+      if (!(c._id in categoriesByCourse)) fetchCategories(c._id);
+    });
+  }, [courses]);
+
+  const pendingCourseIds = useMemo(() => {
+    const courseIdByCategory = new Map<string, string>();
+    for (const course of courses) {
+      const cats = categoriesByCourse[course._id] ?? [];
+      for (const cat of cats) courseIdByCategory.set(cat._id, course._id);
+    }
+    const ids = new Set<string>();
+    for (const pa of pendingAssessments) {
+      const cid = courseIdByCategory.get(pa.assessment.categoryId);
+      if (cid) ids.add(cid);
+    }
+    return ids;
+  }, [courses, categoriesByCourse, pendingAssessments]);
 
   const initials = user?.name
     ? user.name
@@ -32,7 +57,7 @@ export default function CourseListScreen({ navigation }: { navigation: any }) {
         .join("")
     : "?";
 
-  const pendingCourse = courses.find((c) => c.pendingEvaluations > 0) ?? null;
+  const pendingCourse = courses.find((c) => pendingCourseIds.has(c._id)) ?? null;
 
   if (isLoading && courses.length === 0) {
     return (
@@ -83,6 +108,7 @@ export default function CourseListScreen({ navigation }: { navigation: any }) {
             <CourseCard
               key={course._id}
               course={course}
+              hasPending={pendingCourseIds.has(course._id)}
               onPress={() =>
                 navigation.navigate("CourseDetail", { courseId: course._id })
               }
