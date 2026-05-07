@@ -9,14 +9,13 @@ import { AppColors } from "@/src/theme/appColors";
 type Props = {
   course: Course;
   onPress: () => void;
+  hasPending?: boolean;
 };
 
-export default function CourseCard({ course, onPress }: Props) {
-  const hasPending = course.pendingEvaluations > 0;
-  const badgeColor = hasPending ? AppColors.salmon : AppColors.olive;
-  const badgeLabel = hasPending
-    ? `${course.pendingEvaluations} pendiente${course.pendingEvaluations > 1 ? "s" : ""}`
-    : "Al día";
+export default function CourseCard({ course, onPress, hasPending }: Props) {
+  const isPending = hasPending ?? course.pendingEvaluations > 0;
+  const badgeColor = isPending ? AppColors.salmon : AppColors.olive;
+  const badgeLabel = isPending ? "Pendiente" : "Al día";
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
