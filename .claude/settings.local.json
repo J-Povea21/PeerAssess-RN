@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__clickup__clickup_get_task",
+      "Bash(git rm *)",
+      "Bash(npx tsc *)",
+      "Bash(npx jest *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(gh pr *)",
+      "PowerShell(gh *)"
+    ]
+  }
+}

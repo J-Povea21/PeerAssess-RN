@@ -124,7 +124,10 @@ export default function StudentResultsScreen() {
                   <Text style={styles.feedbackTitle}>RETROALIMENTACIÓN AUTOMÁTICA</Text>
                   <Text style={styles.feedbackText}>
                     {feedback.map((seg, i) => (
-                      <Text key={i} style={seg.bold ? styles.feedbackBold : undefined}>
+                      <Text
+                        key={i}
+                        style={seg.bold ? styles.feedbackBold : styles.feedbackText}
+                      >
                         {seg.text}
                       </Text>
                     ))}
@@ -239,15 +242,19 @@ const styles = StyleSheet.create({
     borderColor: AppColors.olive,
     justifyContent: "center",
     alignItems: "center",
-    flexDirection: "row",
     marginBottom: 12,
   },
-  scoreValue: { fontSize: 32, fontWeight: "700", color: AppColors.textDark },
+  scoreValue: {
+    fontSize: 30,
+    fontWeight: "700",
+    color: AppColors.textDark,
+    lineHeight: 34,
+  },
   scoreMax: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textMuted,
-    alignSelf: "flex-end",
-    marginBottom: 6,
+    lineHeight: 14,
+    marginTop: 2,
   },
   assessmentTitle: {
     fontSize: 15,
@@ -269,8 +276,8 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginBottom: 8,
   },
-  feedbackText: { fontSize: 14, color: AppColors.textDark, lineHeight: 20 },
-  feedbackBold: { fontWeight: "700", color: AppColors.textDark },
+  feedbackText: { fontSize: 14, color: "#2A2A2A", lineHeight: 20 },
+  feedbackBold: { fontSize: 14, fontWeight: "700", color: "#2A2A2A", lineHeight: 20 },
   sectionLabel: {
     fontSize: 11,
     fontWeight: "600",
