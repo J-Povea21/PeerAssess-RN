@@ -12,6 +12,7 @@ type CourseState = {
   isLoadingMembers: boolean;
   teacherCourses: Course[];
   isLoadingTeacher: boolean;
+  isCreating: boolean;
   _repo: CourseRepository | null;
   _cachedStudentId: string | null;
   _isFetched: boolean;
@@ -23,6 +24,7 @@ type CourseState = {
   fetchCoursesByTeacher: (teacherId: string) => Promise<void>;
   joinCourse: (accessCode: string, studentId: string) => Promise<void>;
   fetchCourseMembers: (courseId: string) => Promise<void>;
+  createCourse: (name: string, semester: string, teacherId: string) => Promise<void>;
   clearError: () => void;
 };
 
@@ -34,6 +36,7 @@ export const useCourseStore = create<CourseState>((set, get) => ({
   isLoadingMembers: false,
   teacherCourses: [],
   isLoadingTeacher: false,
+  isCreating: false,
   _repo: null,
   _cachedStudentId: null,
   _isFetched: false,
@@ -108,6 +111,27 @@ export const useCourseStore = create<CourseState>((set, get) => ({
       set({ error: (e as Error).message });
     } finally {
       set({ isLoadingMembers: false });
+    }
+  },
+
+  createCourse: async (name, semester, teacherId) => {
+    const { _repo } = get();
+    if (!_repo) throw new Error("CourseStore not initialized");
+
+    set({ isCreating: true });
+    try {
+      const created = await _repo.createCourse(name, semester, teacherId);
+      // Optimistically prepend the new course and bust the cache so the next
+      // focus-effect re-fetch picks up any server-side changes too.
+      set((state) => ({
+        teacherCourses: [created, ...state.teacherCourses],
+        _isTeacherFetched: false,
+        _cachedTeacherId: null,
+      }));
+    } catch (e) {
+      throw e; // screen handles error display via try/catch
+    } finally {
+      set({ isCreating: false });
     }
   },
 

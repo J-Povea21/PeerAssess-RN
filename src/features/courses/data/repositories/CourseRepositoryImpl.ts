@@ -21,4 +21,8 @@ export class CourseRepositoryImpl implements CourseRepository {
   async getMembersByCourse(courseId: string): Promise<CourseMember[]> {
     return this.dataSource.getMembersByCourse(courseId);
   }
+
+  async createCourse(name: string, semester: string, teacherId: string): Promise<Course> {
+    return this.dataSource.createCourse(name, semester, teacherId);
+  }
 }
