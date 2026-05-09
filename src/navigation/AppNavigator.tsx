@@ -4,6 +4,7 @@ import SplashScreen from "@/src/features/auth/presentation/screens/SplashScreen"
 import { useAuthStore } from "@/src/features/auth/presentation/store/useAuthStore";
 import AuthStackNavigator from "./AuthStackNavigator";
 import StudentTabsNavigator from "./StudentTabsNavigator";
+import TeacherTabsNavigator from "./TeacherTabsNavigator";
 
 export default function AppNavigator() {
   const { user, isRestoringSession, restoreSession } = useAuthStore();
@@ -16,5 +17,7 @@ export default function AppNavigator() {
     return <SplashScreen />;
   }
 
-  return user ? <StudentTabsNavigator /> : <AuthStackNavigator />;
+  if (!user) return <AuthStackNavigator />;
+
+  return user.role === "teacher" ? <TeacherTabsNavigator /> : <StudentTabsNavigator />;
 }

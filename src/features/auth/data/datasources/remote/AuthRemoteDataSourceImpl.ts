@@ -52,7 +52,12 @@ export class AuthRemoteDataSourceImpl implements AuthDataSource {
 
     const id = await this._resolveCanonicalId(email);
 
-    const authUser: AuthUser = { email, name: user.name, role: user.role, id };
+    const authUser: AuthUser = {
+      email,
+      name: user.name,
+      role: user.role.toLowerCase() as UserRole,
+      id,
+    };
 
     await this.prefs.storeData(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
     await this.prefs.storeData(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
