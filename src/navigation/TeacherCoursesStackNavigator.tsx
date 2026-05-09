@@ -2,6 +2,7 @@ import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import CourseDetailScreen from "@/src/features/courses/presentation/screens/CourseDetailScreen";
+import CreateCourseScreen from "@/src/features/courses/presentation/screens/CreateCourseScreen";
 import TeacherCourseListScreen from "@/src/features/courses/presentation/screens/TeacherCourseListScreen";
 
 
@@ -18,6 +19,7 @@ export default function TeacherCoursesStackNavigator() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="TeacherCourseList" component={TeacherCourseListScreen} />
       <Stack.Screen name="CourseDetail" component={CourseDetailScreen} />
+      <Stack.Screen name="CreateCourse" component={CreateCourseScreen} />
     </Stack.Navigator>
   );
 }
