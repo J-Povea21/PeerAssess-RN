@@ -6,4 +6,5 @@ export interface CourseDataSource {
   getCoursesByTeacher(teacherId: string): Promise<Course[]>;
   joinCourse(accessCode: string, studentId: string): Promise<Course>;
   getMembersByCourse(courseId: string): Promise<CourseMember[]>;
+  createCourse(name: string, semester: string, teacherId: string): Promise<Course>;
 }

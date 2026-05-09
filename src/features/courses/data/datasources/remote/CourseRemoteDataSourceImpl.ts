@@ -9,6 +9,11 @@ function generateId(length = 12): string {
   return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
 }
 
+const accessCodeChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+function generateAccessCode(length = 6): string {
+  return Array.from({ length }, () => accessCodeChars[Math.floor(Math.random() * accessCodeChars.length)]).join("");
+}
+
 type CourseEnrollmentRow = { _id: string; courseID: string; studentID: string };
 type CourseRow = { _id: string; name: string; semester: string; accessCode?: string; status?: string; teacherID?: string };
 type CountRow = { _id: string };
@@ -128,6 +133,33 @@ export class CourseRemoteDataSourceImpl implements CourseDataSource {
       evaluationCount: 0, // TODO: query via GroupCategories → Assessments when evaluations feature ships
       pendingEvaluations: 0, // TODO: compute from assessments table when evaluations feature ships
       enrollmentCode: row.accessCode,
+    };
+  }
+
+  async createCourse(name: string, semester: string, teacherId: string): Promise<Course> {
+    const db = new RobleDbClient(authorizedFetch);
+    const id = generateId();
+    const accessCode = generateAccessCode();
+
+    await db.insertRecord("Courses", {
+      _id: id,
+      name,
+      semester,
+      nrc: generateId(),
+      teacherID: teacherId,
+      accessCode
+    });
+
+    return {
+      _id: id,
+      name,
+      semester,
+      status: "active",
+      studentCount: 0,
+      categoryCount: 0,
+      evaluationCount: 0,
+      pendingEvaluations: 0,
+      enrollmentCode: accessCode,
     };
   }
 
