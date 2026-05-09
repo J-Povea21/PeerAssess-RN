@@ -77,6 +77,10 @@ export class CourseLocalDataSourceImpl implements CourseDataSource {
     return course;
   }
 
+  async getCoursesByTeacher(_teacherId: string): Promise<Course[]> {
+    return MOCK_COURSES;
+  }
+
   async getMembersByCourse(courseId: string): Promise<CourseMember[]> {
     const rows = MOCK_MEMBERS[courseId] ?? [];
     const byEmail = new Map<string, CourseMember>();

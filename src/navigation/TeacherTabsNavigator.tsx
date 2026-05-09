@@ -4,7 +4,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 
 import ProfileScreen from "@/src/features/auth/presentation/screens/ProfileScreen";
 import { AppColors } from "@/src/theme/appColors";
-import CoursesStackNavigator from "./CoursesStackNavigator";
+import TeacherCoursesStackNavigator from "./TeacherCoursesStackNavigator";
 import TeacherHomeStackNavigator from "./TeacherHomeStackNavigator";
 
 const Tab = createBottomTabNavigator();
@@ -39,7 +39,7 @@ export default function TeacherTabsNavigator() {
       />
       <Tab.Screen
         name="Courses"
-        component={CoursesStackNavigator}
+        component={TeacherCoursesStackNavigator}
         options={{ tabBarLabel: "Cursos" }}
       />
       <Tab.Screen
