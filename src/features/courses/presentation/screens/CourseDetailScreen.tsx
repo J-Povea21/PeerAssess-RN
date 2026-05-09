@@ -27,7 +27,9 @@ type Props = {
 export default function CourseDetailScreen({ navigation, route }: Props) {
   const { courseId } = route.params;
   const { user } = useAuthStore();
-  const course = useCourseStore((s) => s.courses.find((c) => c._id === courseId));
+  const course = useCourseStore(
+    (s) => s.courses.find((c) => c._id === courseId) ?? s.teacherCourses.find((c) => c._id === courseId)
+  );
   const { pendingAssessments, fetchPendingAssessments } = useEvaluationStore();
   const { categoriesByCourse, fetchCategories } = useGroupStore();
   const [activeTab, setActiveTab] = useState<CourseTabKey>("info");

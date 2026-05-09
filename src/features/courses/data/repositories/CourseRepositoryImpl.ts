@@ -10,6 +10,10 @@ export class CourseRepositoryImpl implements CourseRepository {
     return this.dataSource.getCoursesByStudent(studentId);
   }
 
+  async getCoursesByTeacher(teacherId: string): Promise<Course[]> {
+    return this.dataSource.getCoursesByTeacher(teacherId);
+  }
+
   async joinCourse(accessCode: string, studentId: string): Promise<Course> {
     return this.dataSource.joinCourse(accessCode, studentId);
   }
