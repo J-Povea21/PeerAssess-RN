@@ -1,6 +1,7 @@
 // src/features/evaluations/presentation/screens/StudentResultsScreen.tsx
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import { Modal, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { ActivityIndicator, Appbar, Text } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -49,9 +50,11 @@ export default function StudentResultsScreen() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showPicker, setShowPicker] = useState(false);
 
-  useEffect(() => {
-    if (user?.id) fetchMyResults(user.id);
-  }, [user?.id]);
+ useFocusEffect(
+    useCallback(() => {
+      if (user?.id) fetchMyResults(user.id);
+    }, [user?.id])
+  );
 
   useEffect(() => {
     if (myResults.length > 0 && selectedId === null) {

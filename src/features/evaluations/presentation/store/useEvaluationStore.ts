@@ -78,10 +78,14 @@ export const useEvaluationStore = create<EvaluationState>((set, get) => ({
     }
   },
 
-  fetchCriteria: async (assessmentId) => {
-    const { _repo, criteriaByAssessment } = get();
+ fetchCriteria: async (assessmentId) => {
+    const { _repo } = get();
     if (!_repo) throw new Error("EvaluationStore not initialized");
-    if (assessmentId in criteriaByAssessment) return;
+    set((s) => {
+      const next = { ...s.criteriaByAssessment };
+      delete next[assessmentId];
+      return { criteriaByAssessment: next };
+    });
     try {
       const criteria = await _repo.getCriteriaForAssessment(assessmentId);
       set((s) => ({

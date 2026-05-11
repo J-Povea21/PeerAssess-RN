@@ -1,6 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ActivityIndicator, FAB, Text } from "react-native-paper";
@@ -22,12 +23,14 @@ export default function CourseListScreen({ navigation }: { navigation: any }) {
   const { pendingAssessments, fetchPendingAssessments } = useEvaluationStore();
   const { categoriesByCourse, fetchCategories } = useGroupStore();
 
-  useEffect(() => {
-    if (user?.id) {
-      fetchCoursesByStudent(user.id);
-      fetchPendingAssessments(user.id);
-    }
-  }, [user?.id]);
+ useFocusEffect(
+    useCallback(() => {
+      if (user?.id) {
+        fetchCoursesByStudent(user.id);
+        fetchPendingAssessments(user.id);
+      }
+    }, [user?.id])
+  );
 
   useEffect(() => {
     courses.forEach((c) => {
