@@ -1,3 +1,4 @@
+import { Assessment } from "../../domain/entities/Assessment";
 import { Criteria } from "../../domain/entities/Criteria";
 import { NewCriteriaScore } from "../../domain/entities/CriteriaScore";
 import { NewEvaluation } from "../../domain/entities/Evaluation";
@@ -10,4 +11,5 @@ export interface EvaluationDataSource {
   getCriteriaForAssessment(assessmentId: string): Promise<Criteria[]>;
   submitEvaluation(evaluation: NewEvaluation, scores: NewCriteriaScore[]): Promise<void>;
   getMyResults(studentId: string): Promise<StudentResult[]>;
+  getAssessmentsByCourse(categoryIds: string[]): Promise<Assessment[]>;
 }
