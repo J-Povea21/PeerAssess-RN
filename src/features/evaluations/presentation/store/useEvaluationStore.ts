@@ -30,9 +30,9 @@ type EvaluationState = {
   submitEvaluation: (
     evaluation: NewEvaluation,
     scores: NewCriteriaScore[],
-    studentId: string
   ) => Promise<void>;
   fetchMyResults: (studentId: string) => Promise<void>;
+  refreshAfterSubmit: (studentId: string) => Promise<void>;
   clearError: () => void;
 };
 
@@ -96,12 +96,21 @@ export const useEvaluationStore = create<EvaluationState>((set, get) => ({
     }
   },
 
-  submitEvaluation: async (evaluation, scores, studentId) => {
+ submitEvaluation: async (evaluation, scores) => {
     const { _repo } = get();
     if (!_repo) throw new Error("EvaluationStore not initialized");
-    set({ isSubmitting: true, error: null });
     try {
       await _repo.submitEvaluation(evaluation, scores);
+    } catch (e) {
+      set({ error: (e as Error).message });
+      throw e;
+    }
+  },
+
+  refreshAfterSubmit: async (studentId) => {
+    const { _repo } = get();
+    if (!_repo) throw new Error("EvaluationStore not initialized");
+    try {
       const [pending, courseAssessments] = await Promise.all([
         _repo.getPendingAssessments(studentId),
         _repo.getAssessmentsForCourse(
@@ -112,9 +121,6 @@ export const useEvaluationStore = create<EvaluationState>((set, get) => ({
       set({ pendingAssessments: pending, courseAssessments });
     } catch (e) {
       set({ error: (e as Error).message });
-      throw e;
-    } finally {
-      set({ isSubmitting: false });
     }
   },
 
