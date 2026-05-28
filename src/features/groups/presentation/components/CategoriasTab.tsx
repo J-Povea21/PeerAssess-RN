@@ -2,10 +2,11 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import React, { useCallback } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
-import { ActivityIndicator, Snackbar, Surface, Text, TouchableRipple } from "react-native-paper";
+import { ActivityIndicator, FAB, Snackbar, Surface, Text, TouchableRipple } from "react-native-paper";
 
 import { useGroupStore } from "@/src/features/groups/presentation/store/useGroupStore";
 import { AppColors } from "@/src/theme/appColors";
+import { useAuthStore } from "@/src/features/auth/presentation/store/useAuthStore";
 
 type Props = {
   courseId: string;
@@ -13,6 +14,7 @@ type Props = {
 };
 
 export default function CategoriasTab({ courseId, navigation }: Props) {
+  const { user } = useAuthStore();
   const { categoriesByCourse, isLoadingCategories, error, fetchCategories, clearError } = useGroupStore();
   const categories = categoriesByCourse[courseId] ?? [];
 
@@ -62,7 +64,7 @@ export default function CategoriasTab({ courseId, navigation }: Props) {
           ))}
         </ScrollView>
       )}
-      <Snackbar
+<Snackbar
         visible={!!error}
         onDismiss={clearError}
         duration={3000}
@@ -70,6 +72,15 @@ export default function CategoriasTab({ courseId, navigation }: Props) {
       >
         {error}
       </Snackbar>
+      {user?.role === "teacher" && (
+        <FAB
+          icon="plus"
+          label="Importar CSV"
+          style={styles.fab}
+          color="#FFFFFF"
+          onPress={() => navigation.navigate("ImportCsv", { courseId })}
+        />
+      )}
     </>
   );
 }
@@ -116,7 +127,13 @@ const styles = StyleSheet.create({
     color: AppColors.textDark,
     fontWeight: "500",
   },
-  snackbarError: {
+snackbarError: {
     backgroundColor: AppColors.rose,
+  },
+  fab: {
+    position: "absolute",
+    right: 20,
+    bottom: 20,
+    backgroundColor: AppColors.olive,
   },
 });

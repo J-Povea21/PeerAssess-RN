@@ -1,6 +1,8 @@
 import React from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { Text } from "react-native-paper";
+import { useAuthStore } from "@/src/features/auth/presentation/store/useAuthStore";
+import * as Clipboard from "expo-clipboard";
 
 import { Course } from "@/src/features/courses/domain/entities/Course";
 import { AppColors } from "@/src/theme/appColors";
@@ -12,6 +14,7 @@ type Props = {
 };
 
 export default function InfoTab({ course, pendingEvaluationCount }: Props) {
+  const { user } = useAuthStore();
   const isActive = course.status === "active";
   const statusColor = isActive ? AppColors.olive : AppColors.salmon;
   const statusLabel = isActive ? "Activo" : "Pendiente";
@@ -22,7 +25,7 @@ export default function InfoTab({ course, pendingEvaluationCount }: Props) {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      <View style={styles.headerCard}>
+       <View style={styles.headerCard}>
         <Text style={styles.name}>{course.name}</Text>
         <Text style={styles.semester}>{course.semester}</Text>
         <View style={[styles.badge, { backgroundColor: statusColor + "1F" }]}>
@@ -30,6 +33,23 @@ export default function InfoTab({ course, pendingEvaluationCount }: Props) {
           <Text style={[styles.badgeText, { color: statusColor }]}>{statusLabel}</Text>
         </View>
       </View>
+
+      {user?.role === "teacher" && course.enrollmentCode && (
+        <View style={styles.enrollmentCard}>
+          <Text style={styles.enrollmentLabel}>CÓDIGO DE INSCRIPCIÓN</Text>
+          <View style={styles.enrollmentRow}>
+            <Text style={styles.enrollmentCode}>{course.enrollmentCode}</Text>
+            <TouchableOpacity
+              onPress={() => Clipboard.setStringAsync(course.enrollmentCode!)}
+              style={styles.copyButton}
+            >
+              <Text style={styles.copyButtonText}>Copiar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+      
+      
 
       <Text style={styles.sectionLabel}>RESUMEN</Text>
 
@@ -120,5 +140,45 @@ const styles = StyleSheet.create({
   },
   statSpacer: {
     width: 12,
+  },
+  enrollmentCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    padding: 16,
+    marginTop: 12,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  enrollmentLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: AppColors.textMuted,
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  enrollmentRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  enrollmentCode: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: AppColors.textDark,
+    letterSpacing: 2,
+  },
+  copyButton: {
+    backgroundColor: AppColors.olive + "1F",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  copyButtonText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: AppColors.olive,
   },
 });

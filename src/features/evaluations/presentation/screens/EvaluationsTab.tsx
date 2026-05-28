@@ -2,10 +2,11 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React, { useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
-import { ActivityIndicator, Text } from "react-native-paper";
+import { ActivityIndicator, FAB, Text } from "react-native-paper";
 
 import { useAuthStore } from "@/src/features/auth/presentation/store/useAuthStore";
 import { CourseAssessment } from "@/src/features/evaluations/domain/repositories/EvaluationRepository";
+import { Assessment } from "@/src/features/evaluations/domain/entities/Assessment";
 import { useEvaluationStore } from "@/src/features/evaluations/presentation/store/useEvaluationStore";
 import { useGroupStore } from "@/src/features/groups/presentation/store/useGroupStore";
 import { AppColors } from "@/src/theme/appColors";
@@ -27,7 +28,7 @@ function formatDuration(minutes: number): string {
 
 export default function EvaluationsTab({ courseId, navigation }: Props) {
   const { user } = useAuthStore();
-  const { courseAssessments, isLoadingCourseAssessments, fetchAssessmentsForCourse, fetchCriteria } =
+  const { courseAssessments, allCourseAssessments, isLoadingCourseAssessments, isLoadingAllCourseAssessments, fetchAssessmentsForCourse, fetchAllAssessmentsForCourse, fetchCriteria } =
     useEvaluationStore();
   const { categoriesByCourse, fetchCategories } = useGroupStore();
 
@@ -49,6 +50,12 @@ export default function EvaluationsTab({ courseId, navigation }: Props) {
   }, [user?.id, categoryIds]);
 
   useEffect(() => {
+    if (user?.role === "teacher" && categoryIds.length > 0) {
+      fetchAllAssessmentsForCourse(categoryIds);
+    }
+  }, [user?.role, categoryIds]);
+
+  useEffect(() => {
     const interval = setInterval(() => setNow(new Date()), 30_000);
     return () => clearInterval(interval);
   }, []);
@@ -67,7 +74,10 @@ export default function EvaluationsTab({ courseId, navigation }: Props) {
     });
   };
 
-  if (isLoadingCourseAssessments) {
+const isTeacher = user?.role === "teacher";
+  const isLoading = isTeacher ? isLoadingAllCourseAssessments : isLoadingCourseAssessments;
+
+  if (isLoading) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator color={AppColors.olive} />
@@ -75,7 +85,7 @@ export default function EvaluationsTab({ courseId, navigation }: Props) {
     );
   }
 
-  if (courseAssessments.length === 0) {
+  if (!isTeacher && courseAssessments.length === 0) {
     return (
       <View style={styles.empty}>
         <MaterialCommunityIcons
@@ -89,96 +99,191 @@ export default function EvaluationsTab({ courseId, navigation }: Props) {
     );
   }
 
+  if (isTeacher && allCourseAssessments.length === 0) {
+    return (
+      <View style={styles.empty}>
+        <MaterialCommunityIcons
+          name="clipboard-check-outline"
+          size={48}
+          color={AppColors.textMuted}
+          style={{ opacity: 0.5 }}
+        />
+        <Text style={styles.emptyText}>No hay evaluaciones en este curso</Text>
+        <FAB
+          icon="plus"
+          label="Nueva evaluación"
+          style={styles.fab}
+          color="#FFFFFF"
+          onPress={() => navigation.navigate("CreateAssessment", { courseId })}
+        />
+      </View>
+    );
+  }
+
   return (
-    <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
-      {courseAssessments.map((ca) => {
-        const isExpired = new Date(ca.assessment.deadline) < now;
-        const canEvaluate = ca.pendingPeers.length > 0 && !isExpired;
-        const fullyEvaluated = ca.evaluatedPeerCount === ca.totalPeerCount && ca.totalPeerCount > 0;
-
-        return (
-          <TouchableOpacity
-            key={ca.assessment._id}
-            style={[styles.card, !canEvaluate && styles.cardDisabled]}
-            activeOpacity={canEvaluate ? 0.7 : 1}
-            onPress={() => canEvaluate && handleStartEvaluation(ca)}
-          >
-            <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle} numberOfLines={2}>
-                {ca.assessment.title}
-              </Text>
-              <View
-                style={[
-                  styles.statusBadge,
-                  {
-                    backgroundColor: isExpired
-                      ? AppColors.textMuted + "1F"
-                      : AppColors.olive + "1F",
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.statusText,
-                    { color: isExpired ? AppColors.textMuted : AppColors.olive },
-                  ]}
-                >
-                  {isExpired ? "Cerrada" : "Activa"}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.metaRow}>
-              <MaterialCommunityIcons
-                name={ca.assessment.visibility === "public" ? "eye-outline" : "lock-outline"}
-                size={14}
-                color={AppColors.textMuted}
-              />
-              <Text style={styles.metaText}>
-                {ca.assessment.visibility === "public" ? "Pública" : "Privada"}
-              </Text>
-              <MaterialCommunityIcons
-                name="clock-outline"
-                size={14}
-                color={AppColors.textMuted}
-                style={{ marginLeft: 12 }}
-              />
-              <Text style={styles.metaText}>
-                {formatDuration(ca.assessment.timeWindowMinutes)}
-              </Text>
-            </View>
-
-            <View style={styles.metaRow}>
-              <MaterialCommunityIcons
-                name="calendar-outline"
-                size={14}
-                color={AppColors.textMuted}
-              />
-              <Text style={styles.metaText}>{formatDeadline(ca.assessment.deadline)}</Text>
-            </View>
-
-            <View style={styles.actionRow}>
-              {canEvaluate ? (
-                <View style={[styles.actionBadge, { backgroundColor: AppColors.olive + "1F" }]}>
-                  <Text style={[styles.actionText, { color: AppColors.olive }]}>
-                    Evaluar → ({ca.pendingPeers.length} pendiente{ca.pendingPeers.length !== 1 ? "s" : ""})
-                  </Text>
+    <View style={{ flex: 1 }}>
+      <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
+        {isTeacher
+          ? allCourseAssessments.map((assessment) => {
+              const isExpired = new Date(assessment.deadline) < now;
+              return (
+                <View key={assessment._id} style={styles.card}>
+                  <View style={styles.cardHeader}>
+                    <Text style={styles.cardTitle} numberOfLines={2}>
+                      {assessment.title}
+                    </Text>
+                    <View
+                      style={[
+                        styles.statusBadge,
+                        {
+                          backgroundColor: isExpired
+                            ? AppColors.textMuted + "1F"
+                            : AppColors.olive + "1F",
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.statusText,
+                          { color: isExpired ? AppColors.textMuted : AppColors.olive },
+                        ]}
+                      >
+                        {isExpired ? "Cerrada" : "Activa"}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.metaRow}>
+                    <MaterialCommunityIcons
+                      name={assessment.visibility === "public" ? "eye-outline" : "lock-outline"}
+                      size={14}
+                      color={AppColors.textMuted}
+                    />
+                    <Text style={styles.metaText}>
+                      {assessment.visibility === "public" ? "Pública" : "Privada"}
+                    </Text>
+                    <MaterialCommunityIcons
+                      name="clock-outline"
+                      size={14}
+                      color={AppColors.textMuted}
+                      style={{ marginLeft: 12 }}
+                    />
+                    <Text style={styles.metaText}>
+                      {formatDuration(assessment.timeWindowMinutes)}
+                    </Text>
+                  </View>
+                  <View style={styles.metaRow}>
+                    <MaterialCommunityIcons
+                      name="calendar-outline"
+                      size={14}
+                      color={AppColors.textMuted}
+                    />
+                    <Text style={styles.metaText}>{formatDeadline(assessment.deadline)}</Text>
+                  </View>
+                  <View style={styles.actionRow}>
+                    <TouchableOpacity
+                      style={[styles.actionBadge, { backgroundColor: isExpired ? AppColors.textMuted + "1F" : AppColors.olive + "1F" }]}
+                    >
+                      <Text style={[styles.actionText, { color: isExpired ? AppColors.textMuted : AppColors.olive }]}>
+                        {isExpired ? "Cerrar" : "Abrir"}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-              ) : (
-                <View
-                  style={[styles.actionBadge, { backgroundColor: AppColors.textMuted + "1F" }]}
+              );
+            })
+          : courseAssessments.map((ca) => {
+              const isExpired = new Date(ca.assessment.deadline) < now;
+              const canEvaluate = ca.pendingPeers.length > 0 && !isExpired;
+              const fullyEvaluated = ca.evaluatedPeerCount === ca.totalPeerCount && ca.totalPeerCount > 0;
+
+              return (
+                <TouchableOpacity
+                  key={ca.assessment._id}
+                  style={[styles.card, !canEvaluate && styles.cardDisabled]}
+                  activeOpacity={canEvaluate ? 0.7 : 1}
+                  onPress={() => canEvaluate && handleStartEvaluation(ca)}
                 >
-                  <MaterialCommunityIcons name="check" size={12} color={AppColors.textMuted} />
-                  <Text style={[styles.actionText, { color: AppColors.textMuted }]}>
-                    {" "}{fullyEvaluated ? "Evaluado ✓" : "Sin compañeros"}
-                  </Text>
-                </View>
-              )}
-            </View>
-          </TouchableOpacity>
-        );
-      })}
-    </ScrollView>
+                  <View style={styles.cardHeader}>
+                    <Text style={styles.cardTitle} numberOfLines={2}>
+                      {ca.assessment.title}
+                    </Text>
+                    <View
+                      style={[
+                        styles.statusBadge,
+                        {
+                          backgroundColor: isExpired
+                            ? AppColors.textMuted + "1F"
+                            : AppColors.olive + "1F",
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.statusText,
+                          { color: isExpired ? AppColors.textMuted : AppColors.olive },
+                        ]}
+                      >
+                        {isExpired ? "Cerrada" : "Activa"}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.metaRow}>
+                    <MaterialCommunityIcons
+                      name={ca.assessment.visibility === "public" ? "eye-outline" : "lock-outline"}
+                      size={14}
+                      color={AppColors.textMuted}
+                    />
+                    <Text style={styles.metaText}>
+                      {ca.assessment.visibility === "public" ? "Pública" : "Privada"}
+                    </Text>
+                    <MaterialCommunityIcons
+                      name="clock-outline"
+                      size={14}
+                      color={AppColors.textMuted}
+                      style={{ marginLeft: 12 }}
+                    />
+                    <Text style={styles.metaText}>
+                      {formatDuration(ca.assessment.timeWindowMinutes)}
+                    </Text>
+                  </View>
+                  <View style={styles.metaRow}>
+                    <MaterialCommunityIcons
+                      name="calendar-outline"
+                      size={14}
+                      color={AppColors.textMuted}
+                    />
+                    <Text style={styles.metaText}>{formatDeadline(ca.assessment.deadline)}</Text>
+                  </View>
+                  <View style={styles.actionRow}>
+                    {canEvaluate ? (
+                      <View style={[styles.actionBadge, { backgroundColor: AppColors.olive + "1F" }]}>
+                        <Text style={[styles.actionText, { color: AppColors.olive }]}>
+                          Evaluar → ({ca.pendingPeers.length} pendiente{ca.pendingPeers.length !== 1 ? "s" : ""})
+                        </Text>
+                      </View>
+                    ) : (
+                      <View style={[styles.actionBadge, { backgroundColor: AppColors.textMuted + "1F" }]}>
+                        <MaterialCommunityIcons name="check" size={12} color={AppColors.textMuted} />
+                        <Text style={[styles.actionText, { color: AppColors.textMuted }]}>
+                          {" "}{fullyEvaluated ? "Evaluado ✓" : "Sin compañeros"}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+      </ScrollView>
+      {isTeacher && (
+        <FAB
+          icon="plus"
+          label="Nueva evaluación"
+          style={styles.fab}
+          color="#FFFFFF"
+          onPress={() => navigation.navigate("CreateAssessment", { courseId })}
+        />
+      )}
+    </View>
   );
 }
 
@@ -225,4 +330,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   actionText: { fontSize: 12, fontWeight: "600" },
+  fab: {
+    position: "absolute",
+    right: 20,
+    bottom: 20,
+    backgroundColor: AppColors.olive,
+  },
 });
