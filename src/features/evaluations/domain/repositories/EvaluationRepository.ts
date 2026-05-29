@@ -24,4 +24,5 @@ export interface EvaluationRepository {
   getCriteriaForAssessment(assessmentId: string): Promise<Criteria[]>;
   submitEvaluation(evaluation: NewEvaluation, scores: NewCriteriaScore[]): Promise<void>;
   getMyResults(studentId: string): Promise<StudentResult[]>;
+  getAssessmentsByCourse(categoryIds: string[]): Promise<Assessment[]>;
 }

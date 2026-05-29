@@ -332,4 +332,25 @@ export class EvaluationRemoteDataSourceImpl implements EvaluationDataSource {
     const filtered = results.filter((r): r is StudentResult => r !== null);
     return filtered.sort((a, b) => b.mostRecentEvalAt.localeCompare(a.mostRecentEvalAt));
   }
+  async getAssessmentsByCourse(categoryIds: string[]): Promise<Assessment[]> {
+    if (categoryIds.length === 0) return [];
+    const db = new RobleDbClient(authorizedFetch);
+
+    const assessmentsByCategory = await Promise.all(
+      categoryIds.map((catId) =>
+        db.readTable<AssessmentRow>("Assessments", { categoryID: catId })
+      )
+    );
+
+    return assessmentsByCategory.flat().map((a): Assessment => ({
+      _id: a._id,
+      categoryId: a.categoryID,
+      title: a.title,
+      visibility: a.visibility,
+      timeWindowMinutes: a.timeWindow,
+      status: a.status as Assessment["status"],
+      deadline: a.deadline,
+      createdAt: a.createdAt,
+    }));
+  }
 }
