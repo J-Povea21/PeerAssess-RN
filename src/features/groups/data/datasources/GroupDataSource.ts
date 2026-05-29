@@ -8,4 +8,5 @@ export interface GroupDataSource {
   getGroupMembersByStudent(studentId: string): Promise<GroupMember[]>;
   getGroupMembersByGroup(groupId: string): Promise<GroupMember[]>;
   getUserNamesByIds(ids: string[]): Promise<{ id: string; name: string }[]>;
+  importCsv(courseId: string, csvContent: string): Promise<GroupCategory>;
 }
