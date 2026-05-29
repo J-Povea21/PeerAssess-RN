@@ -150,8 +150,6 @@ const isTeacher = user?.role === "teacher";
         {isTeacher
           ? allCourseAssessments.map((assessment) => {
               const isActive = assessment.status === "active";
-              const isExpired = new Date(assessment.deadline) < now;
-              const showAsClosed = !isActive || isExpired;
               const isToggling = togglingId === assessment._id;
               return (
                 <View key={assessment._id} style={styles.card}>
@@ -163,19 +161,19 @@ const isTeacher = user?.role === "teacher";
                       style={[
                         styles.statusBadge,
                         {
-                          backgroundColor: showAsClosed
-                            ? AppColors.textMuted + "1F"
-                            : AppColors.olive + "1F",
+                          backgroundColor: isActive
+                            ? AppColors.olive + "1F"
+                            : AppColors.textMuted + "1F",
                         },
                       ]}
                     >
                       <Text
                         style={[
                           styles.statusText,
-                          { color: showAsClosed ? AppColors.textMuted : AppColors.olive },
+                          { color: isActive ? AppColors.olive : AppColors.textMuted },
                         ]}
                       >
-                        {showAsClosed ? "Cerrada" : "Activa"}
+                        {isActive ? "Activa" : "Cerrada"}
                       </Text>
                     </View>
                   </View>
