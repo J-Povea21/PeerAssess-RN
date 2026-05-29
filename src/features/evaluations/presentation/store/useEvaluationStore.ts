@@ -1,8 +1,8 @@
 // src/features/evaluations/presentation/store/useEvaluationStore.ts
 import { create } from "zustand";
 
-import { Assessment } from "@/src/features/evaluations/domain/entities/Assessment";
-import { Criteria } from "@/src/features/evaluations/domain/entities/Criteria";
+import { Assessment, NewAssessment } from "@/src/features/evaluations/domain/entities/Assessment";
+import { Criteria, NewCriteria } from "@/src/features/evaluations/domain/entities/Criteria";
 import { NewCriteriaScore } from "@/src/features/evaluations/domain/entities/CriteriaScore";
 import { NewEvaluation } from "@/src/features/evaluations/domain/entities/Evaluation";
 import { StudentResult } from "@/src/features/evaluations/domain/entities/StudentResult";
@@ -23,6 +23,7 @@ type EvaluationState = {
   isLoadingCourseAssessments: boolean;
   isLoadingResults: boolean;
   isSubmitting: boolean;
+  isCreating: boolean;
   error: string | null;
   _repo: EvaluationRepository | null;
 
@@ -37,6 +38,11 @@ type EvaluationState = {
   ) => Promise<void>;
   fetchMyResults: (studentId: string) => Promise<void>;
   refreshAfterSubmit: (studentId: string) => Promise<void>;
+  createAssessment: (
+    assessment: NewAssessment,
+    criteria: NewCriteria[],
+    courseId: string,
+  ) => Promise<Assessment>;
   clearError: () => void;
 };
 
@@ -51,6 +57,7 @@ export const useEvaluationStore = create<EvaluationState>((set, get) => ({
   isLoadingCourseAssessments: false,
   isLoadingResults: false,
   isSubmitting: false,
+  isCreating: false,
   error: null,
   _repo: null,
 
@@ -155,6 +162,22 @@ export const useEvaluationStore = create<EvaluationState>((set, get) => ({
       set({ error: (e as Error).message });
     } finally {
       set({ isLoadingResults: false });
+    }
+  },
+
+  createAssessment: async (assessment, criteria, courseId) => {
+    const { _repo } = get();
+    if (!_repo) throw new Error("EvaluationStore not initialized");
+    set({ isCreating: true, error: null });
+    try {
+      const created = await _repo.createAssessment(assessment, criteria, courseId);
+      set((s) => ({ allCourseAssessments: [...s.allCourseAssessments, created] }));
+      return created;
+    } catch (e) {
+      set({ error: (e as Error).message });
+      throw e;
+    } finally {
+      set({ isCreating: false });
     }
   },
 

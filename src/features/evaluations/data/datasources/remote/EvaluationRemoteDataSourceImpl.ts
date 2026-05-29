@@ -1,13 +1,18 @@
 // src/features/evaluations/data/datasources/remote/EvaluationRemoteDataSourceImpl.ts
 import { authorizedFetch } from "@/src/core/http/authorizedFetch";
 import { RobleDbClient } from "@/src/core/http/RobleDbClient";
-import { Assessment } from "../../../domain/entities/Assessment";
-import { Criteria } from "../../../domain/entities/Criteria";
+import { Assessment, NewAssessment } from "../../../domain/entities/Assessment";
+import { Criteria, NewCriteria } from "../../../domain/entities/Criteria";
 import { NewCriteriaScore } from "../../../domain/entities/CriteriaScore";
 import { NewEvaluation } from "../../../domain/entities/Evaluation";
 import { CriteriaAverage, StudentResult } from "../../../domain/entities/StudentResult";
 import { EvaluationDataSource } from "../EvaluationDataSource";
 import { CourseAssessment, PendingAssessment } from "../../../domain/repositories/EvaluationRepository";
+
+const idChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+function generateId(length = 12): string {
+  return Array.from({ length }, () => idChars[Math.floor(Math.random() * idChars.length)]).join("");
+}
 
 // Raw Roble column names — all FK suffixes are uppercase "ID"
 type AssessmentRow = {
@@ -352,5 +357,52 @@ export class EvaluationRemoteDataSourceImpl implements EvaluationDataSource {
       deadline: a.deadline,
       createdAt: a.createdAt,
     }));
+  }
+
+  async createAssessment(
+    assessment: NewAssessment,
+    criteria: NewCriteria[],
+    _courseId: string,
+  ): Promise<Assessment> {
+    const db = new RobleDbClient(authorizedFetch);
+
+    const assessmentId = generateId();
+    const createdAt = new Date().toISOString();
+    const deadline = new Date(
+      Date.now() + assessment.timeWindowMinutes * 60_000,
+    ).toISOString();
+
+    await db.insertRecord("Assessments", {
+      _id: assessmentId,
+      categoryID: assessment.categoryId,
+      title: assessment.title,
+      visibility: assessment.visibility,
+      timeWindow: assessment.timeWindowMinutes,
+      status: "active",
+      deadline,
+      createdAt,
+    });
+
+    await Promise.all(
+      criteria.map((c) =>
+        db.insertRecord("Criteria", {
+          _id: generateId(),
+          assessmentID: assessmentId,
+          name: c.name,
+          weight: c.weight,
+        }),
+      ),
+    );
+
+    return {
+      _id: assessmentId,
+      categoryId: assessment.categoryId,
+      title: assessment.title,
+      visibility: assessment.visibility,
+      timeWindowMinutes: assessment.timeWindowMinutes,
+      status: "active",
+      deadline,
+      createdAt,
+    };
   }
 }
