@@ -104,6 +104,18 @@ export default function EvaluationFormScreen({ navigation, route }: Props) {
     [currentPeerIndex]
   );
 
+  const findIncompletePeer = (): Peer | null => {
+    for (let i = 0; i < peers.length; i++) {
+      const peerScores = scores.get(i) ?? new Map<string, number>();
+      const complete = criteria.every((c) => {
+        const score = peerScores.get(c._id);
+        return score !== undefined && (SCORE_VALUES as readonly number[]).includes(score);
+      });
+      if (!complete) return peers[i];
+    }
+    return null;
+  };
+
   const handleNext = () => {
     if (!allCurrentScored) {
       Alert.alert("Evaluación incompleta", "Selecciona una puntuación para cada criterio.");
@@ -112,11 +124,24 @@ export default function EvaluationFormScreen({ navigation, route }: Props) {
     setCurrentPeerIndex((i) => i + 1);
   };
 
-  const handlePrev = () => setCurrentPeerIndex((i) => i - 1);
-
- const handleSubmit = async () => {
+  const handlePrev = () => {
     if (!allCurrentScored) {
-      Alert.alert("Evaluación incompleta", "Selecciona una puntuación para cada criterio.");
+      Alert.alert(
+        "Evaluación incompleta",
+        "Completa la puntuación de este compañero antes de regresar."
+      );
+      return;
+    }
+    setCurrentPeerIndex((i) => i - 1);
+  };
+
+  const handleSubmit = async () => {
+    const incomplete = findIncompletePeer();
+    if (incomplete) {
+      Alert.alert(
+        "Evaluación incompleta",
+        `Faltan puntuaciones para ${incomplete.fullName}.`
+      );
       return;
     }
 
