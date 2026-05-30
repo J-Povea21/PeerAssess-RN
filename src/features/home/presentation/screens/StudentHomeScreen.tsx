@@ -57,12 +57,13 @@ export default function StudentHomeScreen({ navigation }: { navigation: any }) {
     return map;
   }, [courses, categoriesByCourse]);
 
-  const firstPendingCourse = useMemo<Course | null>(() => {
+  const pendingCourseCount = useMemo<number>(() => {
+    const seen = new Set<string>();
     for (const pa of pendingAssessments) {
       const c = courseByCategoryId.get(pa.assessment.categoryId);
-      if (c) return c;
+      if (c) seen.add(c._id);
     }
-    return null;
+    return seen.size;
   }, [pendingAssessments, courseByCategoryId]);
 
   const handleStartEvaluation = async (pa: PendingAssessment) => {
@@ -115,7 +116,7 @@ export default function StudentHomeScreen({ navigation }: { navigation: any }) {
         </View>
 
         {/* Pending evaluation alert banner */}
-        {firstPendingCourse && <PendingBanner course={firstPendingCourse} />}
+        {pendingCourseCount > 0 && <PendingBanner courseCount={pendingCourseCount} />}
 
         {/* Pending evaluations section */}
         <Text style={styles.sectionLabel}>EVALUACIONES PENDIENTES</Text>

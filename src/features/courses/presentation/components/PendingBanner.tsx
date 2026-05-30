@@ -3,23 +3,22 @@ import React from "react";
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 
-import { Course } from "@/src/features/courses/domain/entities/Course";
 import { AppColors } from "@/src/theme/appColors";
 
 type Props = {
-  course: Course;
+  courseCount: number;
 };
 
-export default function PendingBanner({ course }: Props) {
+export default function PendingBanner({ courseCount }: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.iconBox}>
         <MaterialCommunityIcons name="alert-outline" size={24} color="#FFFFFF" />
       </View>
       <View style={styles.content}>
-        <Text style={styles.title}>Evaluación pendiente</Text>
+        <Text style={styles.title}>Evaluaciones pendientes</Text>
         <Text style={styles.subtitle} numberOfLines={1}>
-          {course.name}
+          {`Tienes ${courseCount} curso${courseCount !== 1 ? "s" : ""} con evaluaciones pendientes`}
         </Text>
       </View>
     </View>
