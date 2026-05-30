@@ -26,4 +26,8 @@ export class GroupRepositoryImpl implements GroupRepository {
   getUserNamesByIds(ids: string[]): Promise<{ id: string; name: string }[]> {
     return this.dataSource.getUserNamesByIds(ids);
   }
+
+  importCsv(courseId: string, csvContent: string): Promise<GroupCategory> {
+    return this.dataSource.importCsv(courseId, csvContent);
+  }
 }

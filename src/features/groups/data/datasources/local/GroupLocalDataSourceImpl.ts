@@ -1,6 +1,7 @@
 import { Group } from "../../../domain/entities/Group";
 import { GroupCategory } from "../../../domain/entities/GroupCategory";
 import { GroupMember } from "../../../domain/entities/GroupMember";
+import { parseBrightspaceCsv } from "../../../domain/parseBrightspaceCsv";
 import { GroupDataSource } from "../GroupDataSource";
 
 export class GroupLocalDataSourceImpl implements GroupDataSource {
@@ -38,5 +39,10 @@ export class GroupLocalDataSourceImpl implements GroupDataSource {
       "student-003": "María Rodríguez",
     };
     return ids.map((id) => ({ id, name: names[id] ?? id }));
+  }
+
+  async importCsv(courseId: string, csvContent: string): Promise<GroupCategory> {
+    const parsed = parseBrightspaceCsv(csvContent);
+    return { _id: "cat-imported", name: parsed.categoryName, courseID: courseId };
   }
 }

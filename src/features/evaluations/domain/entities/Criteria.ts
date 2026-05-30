@@ -4,4 +4,7 @@ export type Criteria = {
   name: string;
   weight: number;
 };
-// No NewCriteria — criteria are created alongside assessments by teachers; this client is read-only.
+export type NewCriteria = {
+  name: string;
+  weight: number;
+};
