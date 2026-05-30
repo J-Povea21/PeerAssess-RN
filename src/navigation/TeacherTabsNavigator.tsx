@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 
 import ProfileScreen from "@/src/features/auth/presentation/screens/ProfileScreen";
 import { AppColors } from "@/src/theme/appColors";
+import AnalyticsStackNavigator from "./AnalyticsStackNavigator";
 import TeacherCoursesStackNavigator from "./TeacherCoursesStackNavigator";
 import TeacherHomeStackNavigator from "./TeacherHomeStackNavigator";
 
@@ -12,6 +13,7 @@ const Tab = createBottomTabNavigator();
 const TAB_ICONS: Record<string, keyof typeof MaterialCommunityIcons.glyphMap> = {
   Dashboard: "home-outline",
   Courses:   "book-outline",
+  Analytics: "chart-bar",
   Profile:   "account-outline",
 };
 
@@ -41,6 +43,11 @@ export default function TeacherTabsNavigator() {
         name="Courses"
         component={TeacherCoursesStackNavigator}
         options={{ tabBarLabel: "Cursos" }}
+      />
+      <Tab.Screen
+        name="Analytics"
+        component={AnalyticsStackNavigator}
+        options={{ tabBarLabel: "Analíticas" }}
       />
       <Tab.Screen
         name="Profile"
