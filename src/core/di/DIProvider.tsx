@@ -15,6 +15,9 @@ import { useGroupStore } from "@/src/features/groups/presentation/store/useGroup
 import { EvaluationRemoteDataSourceImpl } from "@/src/features/evaluations/data/datasources/remote/EvaluationRemoteDataSourceImpl";
 import { EvaluationRepositoryImpl } from "@/src/features/evaluations/data/repositories/EvaluationRepositoryImpl";
 import { useEvaluationStore } from "@/src/features/evaluations/presentation/store/useEvaluationStore";
+import { AnalyticsRemoteDataSourceImpl } from "@/src/features/analytics/data/datasources/remote/AnalyticsRemoteDataSourceImpl";
+import { AnalyticsRepositoryImpl } from "@/src/features/analytics/data/repositories/AnalyticsRepositoryImpl";
+import { useAnalyticsStore } from "@/src/features/analytics/presentation/store/useAnalyticsStore";
 import Container from "./container";
 import { TOKENS } from "./tokens";
 
@@ -50,6 +53,13 @@ export function DIProvider({ children }: { children: ReactNode }) {
     c.register(TOKENS.EvaluationRemoteDS, evaluationDS)
      .register(TOKENS.EvaluationRepo, evaluationRepo);
     useEvaluationStore.getState().init(evaluationRepo);
+
+    // Analytics (teacher) — aggregates existing tables, no auth dependency needed
+    const analyticsDS = new AnalyticsRemoteDataSourceImpl();
+    const analyticsRepo = new AnalyticsRepositoryImpl(analyticsDS);
+    c.register(TOKENS.AnalyticsRemoteDS, analyticsDS)
+     .register(TOKENS.AnalyticsRepo, analyticsRepo);
+    useAnalyticsStore.getState().init(analyticsRepo);
 
     return c;
   }, []);
