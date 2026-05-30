@@ -43,4 +43,12 @@ export class EvaluationRepositoryImpl implements EvaluationRepository {
   ): Promise<Assessment> {
     return this.dataSource.createAssessment(assessment, criteria, courseId);
   }
+
+  closeAssessment(assessmentId: string): Promise<void> {
+    return this.dataSource.closeAssessment(assessmentId);
+  }
+
+  openAssessment(assessmentId: string): Promise<void> {
+    return this.dataSource.openAssessment(assessmentId);
+  }
 }

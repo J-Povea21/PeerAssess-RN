@@ -28,11 +28,21 @@ function formatDuration(minutes: number): string {
 
 export default function EvaluationsTab({ courseId, navigation }: Props) {
   const { user } = useAuthStore();
-  const { courseAssessments, allCourseAssessments, isLoadingCourseAssessments, isLoadingAllCourseAssessments, fetchAssessmentsForCourse, fetchAllAssessmentsForCourse, fetchCriteria } =
-    useEvaluationStore();
+  const {
+    courseAssessments,
+    allCourseAssessments,
+    isLoadingCourseAssessments,
+    isLoadingAllCourseAssessments,
+    fetchAssessmentsForCourse,
+    fetchAllAssessmentsForCourse,
+    fetchCriteria,
+    closeAssessment,
+    openAssessment,
+  } = useEvaluationStore();
   const { categoriesByCourse, fetchCategories } = useGroupStore();
 
   const [now, setNow] = useState(() => new Date());
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const categoryIds = useMemo(
     () => (categoriesByCourse[courseId] ?? []).map((c) => c._id),
@@ -72,6 +82,20 @@ export default function EvaluationsTab({ courseId, navigation }: Props) {
       criteria,
       evaluatorId: user?.id ?? "",
     });
+  };
+
+  const handleToggleStatus = async (assessment: Assessment) => {
+    if (togglingId) return;
+    setTogglingId(assessment._id);
+    try {
+      if (assessment.status === "active") {
+        await closeAssessment(assessment._id);
+      } else {
+        await openAssessment(assessment._id);
+      }
+    } finally {
+      setTogglingId(null);
+    }
   };
 
 const isTeacher = user?.role === "teacher";
@@ -125,7 +149,8 @@ const isTeacher = user?.role === "teacher";
       <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
         {isTeacher
           ? allCourseAssessments.map((assessment) => {
-              const isExpired = new Date(assessment.deadline) < now;
+              const isActive = assessment.status === "active";
+              const isToggling = togglingId === assessment._id;
               return (
                 <View key={assessment._id} style={styles.card}>
                   <View style={styles.cardHeader}>
@@ -136,19 +161,19 @@ const isTeacher = user?.role === "teacher";
                       style={[
                         styles.statusBadge,
                         {
-                          backgroundColor: isExpired
-                            ? AppColors.textMuted + "1F"
-                            : AppColors.olive + "1F",
+                          backgroundColor: isActive
+                            ? AppColors.olive + "1F"
+                            : AppColors.textMuted + "1F",
                         },
                       ]}
                     >
                       <Text
                         style={[
                           styles.statusText,
-                          { color: isExpired ? AppColors.textMuted : AppColors.olive },
+                          { color: isActive ? AppColors.olive : AppColors.textMuted },
                         ]}
                       >
-                        {isExpired ? "Cerrada" : "Activa"}
+                        {isActive ? "Activa" : "Cerrada"}
                       </Text>
                     </View>
                   </View>
@@ -181,10 +206,28 @@ const isTeacher = user?.role === "teacher";
                   </View>
                   <View style={styles.actionRow}>
                     <TouchableOpacity
-                      style={[styles.actionBadge, { backgroundColor: isExpired ? AppColors.textMuted + "1F" : AppColors.olive + "1F" }]}
+                      style={[
+                        styles.actionBadge,
+                        { backgroundColor: isActive ? AppColors.olive + "1F" : AppColors.textMuted + "1F" },
+                        isToggling && styles.cardDisabled,
+                      ]}
+                      disabled={isToggling}
+                      onPress={() => handleToggleStatus(assessment)}
                     >
-                      <Text style={[styles.actionText, { color: isExpired ? AppColors.textMuted : AppColors.olive }]}>
-                        {isExpired ? "Cerrar" : "Abrir"}
+                      {isToggling ? (
+                        <ActivityIndicator
+                          size={12}
+                          color={isActive ? AppColors.olive : AppColors.textMuted}
+                        />
+                      ) : (
+                        <MaterialCommunityIcons
+                          name={isActive ? "lock-outline" : "lock-open-variant-outline"}
+                          size={12}
+                          color={isActive ? AppColors.olive : AppColors.textMuted}
+                        />
+                      )}
+                      <Text style={[styles.actionText, { color: isActive ? AppColors.olive : AppColors.textMuted }]}>
+                        {" "}{isActive ? "Cerrar" : "Abrir"}
                       </Text>
                     </TouchableOpacity>
                   </View>
@@ -192,7 +235,8 @@ const isTeacher = user?.role === "teacher";
               );
             })
           : courseAssessments.map((ca) => {
-              const isExpired = new Date(ca.assessment.deadline) < now;
+              const isExpired =
+                new Date(ca.assessment.deadline) < now || ca.assessment.status === "cancelled";
               const canEvaluate = ca.pendingPeers.length > 0 && !isExpired;
               const fullyEvaluated = ca.evaluatedPeerCount === ca.totalPeerCount && ca.totalPeerCount > 0;
 

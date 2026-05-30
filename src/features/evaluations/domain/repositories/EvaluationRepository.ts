@@ -30,4 +30,6 @@ export interface EvaluationRepository {
     criteria: NewCriteria[],
     courseId: string,
   ): Promise<Assessment>;
+  closeAssessment(assessmentId: string): Promise<void>;
+  openAssessment(assessmentId: string): Promise<void>;
 }

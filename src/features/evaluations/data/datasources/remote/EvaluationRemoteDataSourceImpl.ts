@@ -107,7 +107,7 @@ export class EvaluationRemoteDataSourceImpl implements EvaluationDataSource {
             title: a.title,
             visibility: a.visibility,
             timeWindowMinutes: a.timeWindow,
-            status: "active",
+            status: a.status as Assessment["status"],
             deadline: a.deadline,
             createdAt: a.createdAt,
           } as Assessment,
@@ -144,7 +144,7 @@ export class EvaluationRemoteDataSourceImpl implements EvaluationDataSource {
 
     const assessmentsByCategory = await Promise.all(
       [...categoryToGroup.keys()].map((catId) =>
-        db.readTable<AssessmentRow>("Assessments", { categoryID: catId, status: "active" })
+        db.readTable<AssessmentRow>("Assessments", { categoryID: catId })
       )
     );
     const allAssessments = assessmentsByCategory.flat();
@@ -190,7 +190,7 @@ export class EvaluationRemoteDataSourceImpl implements EvaluationDataSource {
             title: a.title,
             visibility: a.visibility,
             timeWindowMinutes: a.timeWindow,
-            status: "active",
+            status: a.status as Assessment["status"],
             deadline: a.deadline,
             createdAt: a.createdAt,
           } as Assessment,
@@ -404,5 +404,15 @@ export class EvaluationRemoteDataSourceImpl implements EvaluationDataSource {
       deadline,
       createdAt,
     };
+  }
+
+  async closeAssessment(assessmentId: string): Promise<void> {
+    const db = new RobleDbClient(authorizedFetch);
+    await db.updateRecord("Assessments", "_id", assessmentId, { status: "cancelled" });
+  }
+
+  async openAssessment(assessmentId: string): Promise<void> {
+    const db = new RobleDbClient(authorizedFetch);
+    await db.updateRecord("Assessments", "_id", assessmentId, { status: "active" });
   }
 }

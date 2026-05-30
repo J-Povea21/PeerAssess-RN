@@ -43,6 +43,8 @@ type EvaluationState = {
     criteria: NewCriteria[],
     courseId: string,
   ) => Promise<Assessment>;
+  closeAssessment: (assessmentId: string) => Promise<void>;
+  openAssessment: (assessmentId: string) => Promise<void>;
   clearError: () => void;
 };
 
@@ -178,6 +180,30 @@ export const useEvaluationStore = create<EvaluationState>((set, get) => ({
       throw e;
     } finally {
       set({ isCreating: false });
+    }
+  },
+
+  closeAssessment: async (assessmentId) => {
+    const { _repo } = get();
+    if (!_repo) throw new Error("EvaluationStore not initialized");
+    try {
+      await _repo.closeAssessment(assessmentId);
+      const categoryIds = [...new Set(get().allCourseAssessments.map((a) => a.categoryId))];
+      await get().fetchAllAssessmentsForCourse(categoryIds);
+    } catch (e) {
+      set({ error: (e as Error).message });
+    }
+  },
+
+  openAssessment: async (assessmentId) => {
+    const { _repo } = get();
+    if (!_repo) throw new Error("EvaluationStore not initialized");
+    try {
+      await _repo.openAssessment(assessmentId);
+      const categoryIds = [...new Set(get().allCourseAssessments.map((a) => a.categoryId))];
+      await get().fetchAllAssessmentsForCourse(categoryIds);
+    } catch (e) {
+      set({ error: (e as Error).message });
     }
   },
 
