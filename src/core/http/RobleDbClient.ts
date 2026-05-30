@@ -73,6 +73,23 @@ export class RobleDbClient {
         `insertRecord failed: ${response.status} — ${(body as { message?: string }).message ?? "Unknown"}`
       );
     }
+
+    // Roble returns 2xx even when it silently discards rows that fail validation
+    // (e.g. schema/column mismatch). Surface those as errors instead of a false success.
+    const body = responseBody as {
+      skipped?: unknown[];
+      inserted?: unknown[];
+      errors?: unknown[];
+    };
+    if (Array.isArray(body.skipped) && body.skipped.length > 0) {
+      throw new Error(`insertRecord skipped by Roble: ${JSON.stringify(body.skipped)}`);
+    }
+    if (Array.isArray(body.errors) && body.errors.length > 0) {
+      throw new Error(`insertRecord rejected by Roble: ${JSON.stringify(body.errors)}`);
+    }
+    if (Array.isArray(body.inserted) && body.inserted.length === 0) {
+      throw new Error(`insertRecord inserted no rows: ${JSON.stringify(responseBody)}`);
+    }
   }
 
   async updateRecord(

@@ -63,7 +63,10 @@ export class GroupRemoteDataSourceImpl implements GroupDataSource {
       _id: categoryId,
       name: parsed.categoryName,
       courseID: courseId,
+      importedAt: new Date().toISOString(),
     });
+
+    const unmatched: string[] = [];
 
     for (const group of parsed.groups) {
       const groupId = generateId();
@@ -73,13 +76,32 @@ export class GroupRemoteDataSourceImpl implements GroupDataSource {
         categoryID: categoryId,
       });
 
-      for (const memberName of group.members) {
+      for (const member of group.members) {
+        // Resolve the CSV email to the canonical Users._id so the student-side
+        // read flow (which queries GroupMembers by studentID) can find them.
+        const userRows = member.email
+          ? await db.readTable<{ _id: string }>("Users", { mail: member.email })
+          : [];
+
+        if (userRows.length === 0) {
+          unmatched.push(member.name || member.email);
+          continue;
+        }
+
         await db.insertRecord("GroupMembers", {
           _id: generateId(),
           groupID: groupId,
-          studentName: memberName,
+          studentID: userRows[0]._id,
         });
       }
+    }
+
+    if (__DEV__ && unmatched.length > 0) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[importCsv] ${unmatched.length} miembro(s) sin cuenta en Roble, omitidos:`,
+        unmatched
+      );
     }
 
     return { _id: categoryId, name: parsed.categoryName, courseID: courseId };

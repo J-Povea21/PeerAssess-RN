@@ -5,6 +5,7 @@ import CourseDetailScreen from "@/src/features/courses/presentation/screens/Cour
 import CreateCourseScreen from "@/src/features/courses/presentation/screens/CreateCourseScreen";
 import TeacherCourseListScreen from "@/src/features/courses/presentation/screens/TeacherCourseListScreen";
 import ImportCsvScreen from "@/src/features/groups/presentation/screens/ImportCsvScreen";
+import CreateAssessmentScreen from "@/src/features/evaluations/presentation/screens/CreateAssessmentScreen";
 
 
 export type TeacherCoursesStackParamList = {
@@ -12,6 +13,7 @@ export type TeacherCoursesStackParamList = {
   CourseDetail: { courseId: string };
   CreateCourse: undefined;
   ImportCsv: { courseId: string };
+  CreateAssessment: { courseId: string };
 };
 
 const Stack = createNativeStackNavigator<TeacherCoursesStackParamList>();
@@ -23,6 +25,7 @@ export default function TeacherCoursesStackNavigator() {
       <Stack.Screen name="CourseDetail" component={CourseDetailScreen} />
       <Stack.Screen name="CreateCourse" component={CreateCourseScreen} />
       <Stack.Screen name="ImportCsv" component={ImportCsvScreen} />
+      <Stack.Screen name="CreateAssessment" component={CreateAssessmentScreen} />
     </Stack.Navigator>
   );
 }

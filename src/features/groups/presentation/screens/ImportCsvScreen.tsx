@@ -124,8 +124,8 @@ export default function ImportCsvScreen({ navigation, route }: Props) {
                     <Text style={styles.emptyMembers}>Sin miembros</Text>
                   ) : (
                     group.members.map((member, j) => (
-                      <Chip key={`${member}-${j}`} style={styles.memberChip} textStyle={styles.memberChipText} compact>
-                        {member}
+                      <Chip key={`${member.email || member.name}-${j}`} style={styles.memberChip} textStyle={styles.memberChipText} compact>
+                        {member.name || member.email}
                       </Chip>
                     ))
                   )}
