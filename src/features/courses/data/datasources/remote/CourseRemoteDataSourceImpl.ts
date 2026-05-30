@@ -17,9 +17,6 @@ function generateAccessCode(length = 6): string {
 type CourseEnrollmentRow = { _id: string; courseID: string; studentID: string };
 type CourseRow = { _id: string; name: string; semester: string; accessCode?: string; status?: string; teacherID?: string };
 type CountRow = { _id: string };
-type CategoryRow = { _id: string; courseID: string };
-type GroupRow = { _id: string; categoryID: string };
-type GroupMemberRow = { _id: string; groupID: string; studentID: string };
 type UserRow = { _id: string; mail?: string; name?: string; fullName?: string };
 
 export class CourseRemoteDataSourceImpl implements CourseDataSource {
@@ -166,25 +163,12 @@ export class CourseRemoteDataSourceImpl implements CourseDataSource {
   async getMembersByCourse(courseId: string): Promise<CourseMember[]> {
     const db = new RobleDbClient(authorizedFetch);
 
-    const categories = await db.readTable<CategoryRow>("GroupCategories", { courseID: courseId });
-    if (categories.length === 0) return [];
+    const enrollments = await db.readTable<CourseEnrollmentRow>("CourseEnrollments", { courseID: courseId });
+    if (enrollments.length === 0) return [];
 
-    const groupLists = await Promise.all(
-      categories.map((c) => db.readTable<GroupRow>("Groups", { categoryID: c._id }))
-    );
-    const groups = groupLists.flat();
-    if (groups.length === 0) return [];
+    const studentIds = Array.from(new Set(enrollments.map((e) => e.studentID).filter(Boolean)));
 
-    const memberLists = await Promise.all(
-      groups.map((g) => db.readTable<GroupMemberRow>("GroupMembers", { groupID: g._id }))
-    );
-    const allMembers = memberLists.flat();
-
-    // Dedupe at the studentID level first to minimize Users lookups.
-    const studentIds = Array.from(new Set(allMembers.map((m) => m.studentID).filter(Boolean)));
-    if (studentIds.length === 0) return [];
-
-    // TODO: 1 request per student — batch when Roble supports multi-ID reads (same pattern as getCoursesByStudent)
+    // TODO: 1 request per student — batch when Roble supports multi-ID reads
     const userLists = await Promise.all(
       studentIds.map((id) => db.readTable<UserRow>("Users", { _id: id }))
     );
