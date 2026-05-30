@@ -1,6 +1,11 @@
+export type ParsedMember = {
+  name: string;
+  email: string;
+};
+
 export type ParsedGroup = {
   name: string;
-  members: string[];
+  members: ParsedMember[];
 };
 
 export type ParsedCsvImport = {
@@ -9,11 +14,14 @@ export type ParsedCsvImport = {
   memberCount: number;
 };
 
-// Brightspace Group Export columns: 0=category, 1=group, 5=firstName, 6=lastName.
+// Brightspace Group Export columns:
+// 0=category, 1=group, 3=username, 5=firstName, 6=lastName, 7=email.
 const COL_CATEGORY = 0;
 const COL_GROUP = 1;
+const COL_USERNAME = 3;
 const COL_FIRST_NAME = 5;
 const COL_LAST_NAME = 6;
+const COL_EMAIL = 7;
 const MIN_COLUMNS = 8;
 
 // RFC-4180-ish field splitter: handles quoted fields containing commas, quotes, and newlines.
@@ -70,7 +78,7 @@ export function parseBrightspaceCsv(csvContent: string): ParsedCsvImport {
 
   let categoryName = "";
   const groupOrder: string[] = [];
-  const membersByGroup = new Map<string, string[]>();
+  const membersByGroup = new Map<string, ParsedMember[]>();
   let memberCount = 0;
 
   for (const cols of dataRows) {
@@ -89,8 +97,10 @@ export function parseBrightspaceCsv(csvContent: string): ParsedCsvImport {
     }
 
     const fullName = `${cols[COL_FIRST_NAME].trim()} ${cols[COL_LAST_NAME].trim()}`.trim();
-    if (fullName) {
-      membersByGroup.get(groupName)!.push(fullName);
+    // Email Address is the primary join key; fall back to Username (also an email in Brightspace).
+    const email = (cols[COL_EMAIL]?.trim() || cols[COL_USERNAME]?.trim() || "").toLowerCase();
+    if (fullName || email) {
+      membersByGroup.get(groupName)!.push({ name: fullName, email });
       memberCount++;
     }
   }

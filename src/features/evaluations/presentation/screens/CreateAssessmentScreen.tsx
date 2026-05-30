@@ -137,6 +137,8 @@ export default function CreateAssessmentScreen({ route, navigation }: Props) {
           mode="outlined"
           outlineColor={titleError ? AppColors.salmon : "transparent"}
           activeOutlineColor={titleError ? AppColors.salmon : AppColors.olive}
+          textColor={AppColors.textDark}
+          placeholderTextColor={AppColors.textMuted}
           style={styles.input}
           error={!!titleError}
           returnKeyType="done"
@@ -210,6 +212,8 @@ export default function CreateAssessmentScreen({ route, navigation }: Props) {
           keyboardType="number-pad"
           outlineColor={timeWindowError ? AppColors.salmon : "transparent"}
           activeOutlineColor={timeWindowError ? AppColors.salmon : AppColors.olive}
+          textColor={AppColors.textDark}
+          placeholderTextColor={AppColors.textMuted}
           style={styles.input}
           error={!!timeWindowError}
           returnKeyType="done"
