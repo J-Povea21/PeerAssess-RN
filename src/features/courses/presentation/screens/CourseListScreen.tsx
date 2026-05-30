@@ -60,7 +60,7 @@ export default function CourseListScreen({ navigation }: { navigation: any }) {
         .join("")
     : "?";
 
-  const pendingCourse = courses.find((c) => pendingCourseIds.has(c._id)) ?? null;
+  const pendingCourseCount = pendingCourseIds.size;
 
   if (isLoading && courses.length === 0) {
     return (
@@ -88,7 +88,7 @@ export default function CourseListScreen({ navigation }: { navigation: any }) {
         </View>
 
         {/* Pending evaluation banner — shows only when a course has pending evaluations */}
-        {pendingCourse && <PendingBanner course={pendingCourse} />}
+        {pendingCourseCount > 0 && <PendingBanner courseCount={pendingCourseCount} />}
 
         {/* Section label */}
         <Text style={styles.sectionLabel}>MIS CURSOS</Text>
