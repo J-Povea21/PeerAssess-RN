@@ -6,6 +6,7 @@ import CourseListScreen from "@/src/features/courses/presentation/screens/Course
 import JoinCourseScreen from "@/src/features/courses/presentation/screens/JoinCourseScreen";
 import GroupListScreen from "@/src/features/groups/presentation/screens/GroupListScreen";
 import GroupMembersScreen from "@/src/features/groups/presentation/screens/GroupMembersScreen";
+import ImportCsvScreen from "@/src/features/groups/presentation/screens/ImportCsvScreen";
 import EvaluationFormScreen from "@/src/features/evaluations/presentation/screens/EvaluationFormScreen";
 import { AppColors } from "@/src/theme/appColors";
 
@@ -15,6 +16,7 @@ export type CoursesStackParamList = {
   CourseDetail: { courseId: string };
   GroupList: { categoryId: string; categoryName: string };
   GroupMembers: { groupId: string; groupName: string };
+  ImportCsv: { courseId: string };
   EvaluationForm: {
     assessmentId: string;
     assessmentTitle: string;
@@ -46,6 +48,7 @@ export default function CoursesStackNavigator() {
       <Stack.Screen name="CourseDetail" component={CourseDetailScreen} />
       <Stack.Screen name="GroupList" component={GroupListScreen} />
       <Stack.Screen name="GroupMembers" component={GroupMembersScreen} />
+      <Stack.Screen name="ImportCsv" component={ImportCsvScreen} />
       <Stack.Screen name="EvaluationForm" component={EvaluationFormScreen} />
     </Stack.Navigator>
   );

@@ -1,6 +1,7 @@
-import { Criteria } from "../../domain/entities/Criteria";
+import { Criteria, NewCriteria } from "../../domain/entities/Criteria";
 import { NewCriteriaScore } from "../../domain/entities/CriteriaScore";
 import { NewEvaluation } from "../../domain/entities/Evaluation";
+import { Assessment, NewAssessment } from "../../domain/entities/Assessment";
 import { StudentResult } from "../../domain/entities/StudentResult";
 import {
   CourseAssessment,
@@ -30,5 +31,24 @@ export class EvaluationRepositoryImpl implements EvaluationRepository {
 
   getMyResults(studentId: string): Promise<StudentResult[]> {
     return this.dataSource.getMyResults(studentId);
+  }
+  getAssessmentsByCourse(categoryIds: string[]): Promise<Assessment[]> {
+    return this.dataSource.getAssessmentsByCourse(categoryIds);
+  }
+
+  createAssessment(
+    assessment: NewAssessment,
+    criteria: NewCriteria[],
+    courseId: string,
+  ): Promise<Assessment> {
+    return this.dataSource.createAssessment(assessment, criteria, courseId);
+  }
+
+  closeAssessment(assessmentId: string): Promise<void> {
+    return this.dataSource.closeAssessment(assessmentId);
+  }
+
+  openAssessment(assessmentId: string): Promise<void> {
+    return this.dataSource.openAssessment(assessmentId);
   }
 }

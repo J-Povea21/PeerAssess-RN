@@ -9,12 +9,14 @@ function generateId(length = 12): string {
   return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
 }
 
+const accessCodeChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+function generateAccessCode(length = 6): string {
+  return Array.from({ length }, () => accessCodeChars[Math.floor(Math.random() * accessCodeChars.length)]).join("");
+}
+
 type CourseEnrollmentRow = { _id: string; courseID: string; studentID: string };
-type CourseRow = { _id: string; name: string; semester: string; accessCode?: string; status?: string };
+type CourseRow = { _id: string; name: string; semester: string; accessCode?: string; status?: string; teacherID?: string };
 type CountRow = { _id: string };
-type CategoryRow = { _id: string; courseID: string };
-type GroupRow = { _id: string; categoryID: string };
-type GroupMemberRow = { _id: string; groupID: string; studentID: string };
 type UserRow = { _id: string; mail?: string; name?: string; fullName?: string };
 
 export class CourseRemoteDataSourceImpl implements CourseDataSource {
@@ -54,6 +56,44 @@ export class CourseRemoteDataSourceImpl implements CourseDataSource {
     );
 
     return courses.filter((c): c is Course => c !== null);
+  }
+
+  async getCoursesByTeacher(teacherId: string): Promise<Course[]> {
+    const db = new RobleDbClient(authorizedFetch);
+
+    const courseRows = await db.readTable<CourseRow>("Courses", { teacherID: teacherId });
+    if (courseRows.length === 0) return [];
+
+    const courses = await Promise.all(
+      courseRows.map(async (row) => {
+        const [studentRows, categoryRows] = await Promise.all([
+          db.readTable<CountRow>("CourseEnrollments", { courseID: row._id }),
+          db.readTable<CountRow>("GroupCategories", { courseID: row._id }),
+        ]);
+        const assessmentRows = (
+          await Promise.all(
+            categoryRows.map((category) =>
+              db.readTable<CountRow>("Assessments", { categoryID: category._id })
+            )
+          )
+        ).flat();
+
+        const course: Course = {
+          _id: row._id,
+          name: row.name,
+          semester: row.semester,
+          status: (row.status ?? "active") as CourseStatus,
+          studentCount: studentRows.length,
+          categoryCount: categoryRows.length,
+          evaluationCount: assessmentRows.length,
+          pendingEvaluations: 0, // N/A for teachers
+          enrollmentCode: row.accessCode,
+        };
+        return course;
+      })
+    );
+
+    return courses;
   }
 
   async joinCourse(accessCode: string, studentId: string): Promise<Course> {
@@ -100,28 +140,42 @@ export class CourseRemoteDataSourceImpl implements CourseDataSource {
     };
   }
 
+  async createCourse(name: string, semester: string, teacherId: string): Promise<Course> {
+    const db = new RobleDbClient(authorizedFetch);
+    const id = generateId();
+    const accessCode = generateAccessCode();
+
+    await db.insertRecord("Courses", {
+      _id: id,
+      name,
+      semester,
+      nrc: generateId(),
+      teacherID: teacherId,
+      accessCode
+    });
+
+    return {
+      _id: id,
+      name,
+      semester,
+      status: "active",
+      studentCount: 0,
+      categoryCount: 0,
+      evaluationCount: 0,
+      pendingEvaluations: 0,
+      enrollmentCode: accessCode,
+    };
+  }
+
   async getMembersByCourse(courseId: string): Promise<CourseMember[]> {
     const db = new RobleDbClient(authorizedFetch);
 
-    const categories = await db.readTable<CategoryRow>("GroupCategories", { courseID: courseId });
-    if (categories.length === 0) return [];
+    const enrollments = await db.readTable<CourseEnrollmentRow>("CourseEnrollments", { courseID: courseId });
+    if (enrollments.length === 0) return [];
 
-    const groupLists = await Promise.all(
-      categories.map((c) => db.readTable<GroupRow>("Groups", { categoryID: c._id }))
-    );
-    const groups = groupLists.flat();
-    if (groups.length === 0) return [];
+    const studentIds = Array.from(new Set(enrollments.map((e) => e.studentID).filter(Boolean)));
 
-    const memberLists = await Promise.all(
-      groups.map((g) => db.readTable<GroupMemberRow>("GroupMembers", { groupID: g._id }))
-    );
-    const allMembers = memberLists.flat();
-
-    // Dedupe at the studentID level first to minimize Users lookups.
-    const studentIds = Array.from(new Set(allMembers.map((m) => m.studentID).filter(Boolean)));
-    if (studentIds.length === 0) return [];
-
-    // TODO: 1 request per student — batch when Roble supports multi-ID reads (same pattern as getCoursesByStudent)
+    // TODO: 1 request per student — batch when Roble supports multi-ID reads
     const userLists = await Promise.all(
       studentIds.map((id) => db.readTable<UserRow>("Users", { _id: id }))
     );

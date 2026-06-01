@@ -7,4 +7,6 @@ export const TOKENS = {
   GroupRepo: Symbol("GroupRepo"),
   EvaluationRemoteDS: Symbol("EvaluationRemoteDS"),
   EvaluationRepo: Symbol("EvaluationRepo"),
+  AnalyticsRemoteDS: Symbol("AnalyticsRemoteDS"),
+  AnalyticsRepo: Symbol("AnalyticsRepo"),
 } as const;

@@ -77,6 +77,25 @@ export class CourseLocalDataSourceImpl implements CourseDataSource {
     return course;
   }
 
+  async getCoursesByTeacher(_teacherId: string): Promise<Course[]> {
+    return MOCK_COURSES;
+  }
+
+  async createCourse(name: string, semester: string, _teacherId: string): Promise<Course> {
+    const newCourse: Course = {
+      _id: `local-${Date.now()}`,
+      name,
+      semester,
+      status: "active",
+      studentCount: 0,
+      categoryCount: 0,
+      evaluationCount: 0,
+      pendingEvaluations: 0,
+    };
+    MOCK_COURSES.push(newCourse);
+    return newCourse;
+  }
+
   async getMembersByCourse(courseId: string): Promise<CourseMember[]> {
     const rows = MOCK_MEMBERS[courseId] ?? [];
     const byEmail = new Map<string, CourseMember>();

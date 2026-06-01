@@ -3,7 +3,13 @@ import { RobleDbClient } from "@/src/core/http/RobleDbClient";
 import { Group } from "../../../domain/entities/Group";
 import { GroupCategory } from "../../../domain/entities/GroupCategory";
 import { GroupMember } from "../../../domain/entities/GroupMember";
+import { parseBrightspaceCsv } from "../../../domain/parseBrightspaceCsv";
 import { GroupDataSource } from "../GroupDataSource";
+
+const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+function generateId(length = 12): string {
+  return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+}
 
 type GroupCategoryRow = { _id: string; name: string; courseID: string };
 type GroupRow = { _id: string; name: string; categoryID: string };
@@ -42,5 +48,62 @@ export class GroupRemoteDataSourceImpl implements GroupDataSource {
         return { id, name: rows.length > 0 ? rows[0].name : id };
       })
     );
+  }
+
+  async importCsv(courseId: string, csvContent: string): Promise<GroupCategory> {
+    const parsed = parseBrightspaceCsv(csvContent);
+    if (!parsed.categoryName || parsed.groups.length === 0) {
+      throw new Error("El archivo CSV no contiene categorías ni grupos válidos");
+    }
+
+    const db = new RobleDbClient(authorizedFetch);
+
+    const categoryId = generateId();
+    await db.insertRecord("GroupCategories", {
+      _id: categoryId,
+      name: parsed.categoryName,
+      courseID: courseId,
+      importedAt: new Date().toISOString(),
+    });
+
+    const unmatched: string[] = [];
+
+    for (const group of parsed.groups) {
+      const groupId = generateId();
+      await db.insertRecord("Groups", {
+        _id: groupId,
+        name: group.name,
+        categoryID: categoryId,
+      });
+
+      for (const member of group.members) {
+        // Resolve the CSV email to the canonical Users._id so the student-side
+        // read flow (which queries GroupMembers by studentID) can find them.
+        const userRows = member.email
+          ? await db.readTable<{ _id: string }>("Users", { mail: member.email })
+          : [];
+
+        if (userRows.length === 0) {
+          unmatched.push(member.name || member.email);
+          continue;
+        }
+
+        await db.insertRecord("GroupMembers", {
+          _id: generateId(),
+          groupID: groupId,
+          studentID: userRows[0]._id,
+        });
+      }
+    }
+
+    if (__DEV__ && unmatched.length > 0) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[importCsv] ${unmatched.length} miembro(s) sin cuenta en Roble, omitidos:`,
+        unmatched
+      );
+    }
+
+    return { _id: categoryId, name: parsed.categoryName, courseID: courseId };
   }
 }

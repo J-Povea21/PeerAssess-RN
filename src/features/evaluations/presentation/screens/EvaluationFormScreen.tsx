@@ -104,6 +104,18 @@ export default function EvaluationFormScreen({ navigation, route }: Props) {
     [currentPeerIndex]
   );
 
+  const findIncompletePeer = (): Peer | null => {
+    for (let i = 0; i < peers.length; i++) {
+      const peerScores = scores.get(i) ?? new Map<string, number>();
+      const complete = criteria.every((c) => {
+        const score = peerScores.get(c._id);
+        return score !== undefined && (SCORE_VALUES as readonly number[]).includes(score);
+      });
+      if (!complete) return peers[i];
+    }
+    return null;
+  };
+
   const handleNext = () => {
     if (!allCurrentScored) {
       Alert.alert("Evaluación incompleta", "Selecciona una puntuación para cada criterio.");
@@ -112,22 +124,37 @@ export default function EvaluationFormScreen({ navigation, route }: Props) {
     setCurrentPeerIndex((i) => i + 1);
   };
 
-  const handlePrev = () => setCurrentPeerIndex((i) => i - 1);
-
-  const handleSubmit = async () => {
+  const handlePrev = () => {
     if (!allCurrentScored) {
-      Alert.alert("Evaluación incompleta", "Selecciona una puntuación para cada criterio.");
+      Alert.alert(
+        "Evaluación incompleta",
+        "Completa la puntuación de este compañero antes de regresar."
+      );
       return;
     }
+    setCurrentPeerIndex((i) => i - 1);
+  };
+
+  const handleSubmit = async () => {
+    const incomplete = findIncompletePeer();
+    if (incomplete) {
+      Alert.alert(
+        "Evaluación incompleta",
+        `Faltan puntuaciones para ${incomplete.fullName}.`
+      );
+      return;
+    }
+
+    useEvaluationStore.setState({ isSubmitting: true, error: null });
     try {
-      await Promise.all(
-        peers.map(async (peer, peerIdx) => {
-          const peerScores = scores.get(peerIdx) ?? new Map<string, number>();
-          const criteriaScores = criteria.map((c) => ({
-            criteriaId: c._id,
-            score: peerScores.get(c._id) ?? 0,
-            evaluationId: "",
-          }));
+      for (const [peerIdx, peer] of peers.entries()) {
+        const peerScores = scores.get(peerIdx) ?? new Map<string, number>();
+        const criteriaScores = criteria.map((c) => ({
+          criteriaId: c._id,
+          score: peerScores.get(c._id) ?? 0,
+          evaluationId: "",
+        }));
+        try {
           await submitEvaluation(
             {
               assessmentId,
@@ -137,15 +164,19 @@ export default function EvaluationFormScreen({ navigation, route }: Props) {
               submittedAt: new Date().toISOString(),
             },
             criteriaScores,
-            evaluatorId
+          
           );
-        })
-      );
+        } catch (e) {
+          Alert.alert("Error", `Falló la evaluación de ${peer.fullName}: ${(e as Error).message}`);
+          return;
+        }
+      }
+      await useEvaluationStore.getState().refreshAfterSubmit(evaluatorId);
       Alert.alert("¡Listo!", "Tu evaluación fue enviada exitosamente.", [
         { text: "OK", onPress: () => navigation.goBack() },
       ]);
-    } catch (e) {
-      Alert.alert("Error", (e as Error).message);
+    } finally {
+      useEvaluationStore.setState({ isSubmitting: false });
     }
   };
 

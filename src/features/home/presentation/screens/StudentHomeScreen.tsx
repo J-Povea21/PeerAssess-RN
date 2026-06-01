@@ -1,5 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useCallback, useEffect, useMemo } from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
@@ -14,11 +15,14 @@ import { PendingAssessment } from "@/src/features/evaluations/domain/repositorie
 import { useEvaluationStore } from "@/src/features/evaluations/presentation/store/useEvaluationStore";
 import { useGroupStore } from "@/src/features/groups/presentation/store/useGroupStore";
 import LogoBox from "@/src/core/components/LogoBox";
+import { HomeStackParamList } from "@/src/navigation/HomeStackNavigator";
 import { AppColors } from "@/src/theme/appColors";
 
 const BG_COLORS = [AppColors.beige, "#FFFFFF", AppColors.rose + "0D"] as const;
 
-export default function StudentHomeScreen({ navigation }: { navigation: any }) {
+type Props = NativeStackScreenProps<HomeStackParamList, "Home">;
+
+export default function StudentHomeScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const { user } = useAuthStore();
   const { courses, isLoading, fetchCoursesByStudent } = useCourseStore();
@@ -57,12 +61,13 @@ export default function StudentHomeScreen({ navigation }: { navigation: any }) {
     return map;
   }, [courses, categoriesByCourse]);
 
-  const firstPendingCourse = useMemo<Course | null>(() => {
+  const pendingCourseCount = useMemo<number>(() => {
+    const seen = new Set<string>();
     for (const pa of pendingAssessments) {
       const c = courseByCategoryId.get(pa.assessment.categoryId);
-      if (c) return c;
+      if (c) seen.add(c._id);
     }
-    return null;
+    return seen.size;
   }, [pendingAssessments, courseByCategoryId]);
 
   const handleStartEvaluation = async (pa: PendingAssessment) => {
@@ -115,7 +120,7 @@ export default function StudentHomeScreen({ navigation }: { navigation: any }) {
         </View>
 
         {/* Pending evaluation alert banner */}
-        {firstPendingCourse && <PendingBanner course={firstPendingCourse} />}
+        {pendingCourseCount > 0 && <PendingBanner courseCount={pendingCourseCount} />}
 
         {/* Pending evaluations section */}
         <Text style={styles.sectionLabel}>EVALUACIONES PENDIENTES</Text>

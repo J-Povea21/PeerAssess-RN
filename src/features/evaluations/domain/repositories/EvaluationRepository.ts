@@ -1,5 +1,5 @@
-import { Assessment } from "../entities/Assessment";
-import { Criteria } from "../entities/Criteria";
+import { Assessment, NewAssessment } from "../entities/Assessment";
+import { Criteria, NewCriteria } from "../entities/Criteria";
 import { NewCriteriaScore } from "../entities/CriteriaScore";
 import { NewEvaluation } from "../entities/Evaluation";
 import { StudentResult } from "../entities/StudentResult";
@@ -24,4 +24,12 @@ export interface EvaluationRepository {
   getCriteriaForAssessment(assessmentId: string): Promise<Criteria[]>;
   submitEvaluation(evaluation: NewEvaluation, scores: NewCriteriaScore[]): Promise<void>;
   getMyResults(studentId: string): Promise<StudentResult[]>;
+  getAssessmentsByCourse(categoryIds: string[]): Promise<Assessment[]>;
+  createAssessment(
+    assessment: NewAssessment,
+    criteria: NewCriteria[],
+    courseId: string,
+  ): Promise<Assessment>;
+  closeAssessment(assessmentId: string): Promise<void>;
+  openAssessment(assessmentId: string): Promise<void>;
 }

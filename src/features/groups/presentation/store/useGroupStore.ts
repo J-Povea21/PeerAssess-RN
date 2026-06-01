@@ -16,6 +16,7 @@ type GroupState = {
   isLoadingGroups: boolean;
   isLoadingMembership: boolean;
   isLoadingMembers: boolean;
+  isImporting: boolean;
   error: string | null;
   _repo: GroupRepository | null;
   init: (repo: GroupRepository) => void;
@@ -24,6 +25,7 @@ type GroupState = {
   fetchMyMembership: (studentId: string) => Promise<void>;
   fetchMembersByGroup: (groupId: string) => Promise<void>;
   fetchStudentNames: (ids: string[]) => Promise<void>;
+  importCsv: (courseId: string, csvContent: string) => Promise<GroupCategory>;
   clearError: () => void;
 };
 
@@ -38,6 +40,7 @@ export const useGroupStore = create<GroupState>((set, get) => ({
   isLoadingGroups: false,
   isLoadingMembership: false,
   isLoadingMembers: false,
+  isImporting: false,
   error: null,
   _repo: null,
 
@@ -125,6 +128,25 @@ export const useGroupStore = create<GroupState>((set, get) => ({
       set({ error: (e as Error).message });
     } finally {
       set({ isLoadingMembers: false });
+    }
+  },
+
+  importCsv: async (courseId, csvContent) => {
+    const { _repo } = get();
+    if (!_repo) throw new Error("GroupStore not initialized");
+
+    set({ isImporting: true, error: null });
+    try {
+      const category = await _repo.importCsv(courseId, csvContent);
+      // Invalidate so the Categorías focus effect refetches with the new category.
+      set((s) => {
+        const next = { ...s.categoriesByCourse };
+        delete next[courseId];
+        return { categoriesByCourse: next };
+      });
+      return category;
+    } finally {
+      set({ isImporting: false });
     }
   },
 

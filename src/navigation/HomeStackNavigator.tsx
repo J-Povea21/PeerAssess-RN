@@ -4,6 +4,9 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import CourseDetailScreen from "@/src/features/courses/presentation/screens/CourseDetailScreen";
 import StudentHomeScreen from "@/src/features/home/presentation/screens/StudentHomeScreen";
 import JoinCourseScreen from "@/src/features/courses/presentation/screens/JoinCourseScreen";
+import GroupListScreen from "@/src/features/groups/presentation/screens/GroupListScreen";
+import GroupMembersScreen from "@/src/features/groups/presentation/screens/GroupMembersScreen";
+import ImportCsvScreen from "@/src/features/groups/presentation/screens/ImportCsvScreen";
 import EvaluationFormScreen from "@/src/features/evaluations/presentation/screens/EvaluationFormScreen";
 import { AppColors } from "@/src/theme/appColors";
 
@@ -11,6 +14,9 @@ export type HomeStackParamList = {
   Home: undefined;
   JoinCourse: undefined;
   CourseDetail: { courseId: string };
+  GroupList: { categoryId: string; categoryName: string };
+  GroupMembers: { groupId: string; groupName: string };
+  ImportCsv: { courseId: string };
   EvaluationForm: {
     assessmentId: string;
     assessmentTitle: string;
@@ -40,6 +46,9 @@ export default function HomeStackNavigator() {
         }}
       />
       <Stack.Screen name="CourseDetail" component={CourseDetailScreen} />
+      <Stack.Screen name="GroupList" component={GroupListScreen} />
+      <Stack.Screen name="GroupMembers" component={GroupMembersScreen} />
+      <Stack.Screen name="ImportCsv" component={ImportCsvScreen} />
       <Stack.Screen name="EvaluationForm" component={EvaluationFormScreen} />
     </Stack.Navigator>
   );

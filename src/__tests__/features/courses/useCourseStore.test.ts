@@ -15,8 +15,10 @@ const mockCourse: Course = {
 
 const mockRepo: CourseRepository = {
   getCoursesByStudent: jest.fn().mockResolvedValue([mockCourse]),
+  getCoursesByTeacher: jest.fn().mockResolvedValue([mockCourse]),
   joinCourse: jest.fn().mockResolvedValue(mockCourse),
   getMembersByCourse: jest.fn().mockResolvedValue([]),
+  createCourse: jest.fn().mockResolvedValue(mockCourse),
 };
 
 beforeEach(() => {
@@ -26,10 +28,15 @@ beforeEach(() => {
     error: null,
     membersByCourse: {},
     isLoadingMembers: false,
+    teacherCourses: [],
+    isLoadingTeacher: false,
+    isCreating: false,
     _repo: null,
     _cachedStudentId: null,
     _isFetched: false,
-    _membersFetched: new Set<string>(),
+    _membersFetched: {},
+    _cachedTeacherId: null,
+    _isTeacherFetched: false,
   });
   jest.clearAllMocks();
 });
@@ -92,4 +99,34 @@ test("joinCourse sets error state on failure", async () => {
   await useCourseStore.getState().joinCourse("BADCODE", "student-1");
 
   expect(useCourseStore.getState().error).toBe("No se encontró un curso con ese código");
+});
+
+test("createCourse prepends to teacherCourses and invalidates teacher cache", async () => {
+  const existing: Course = { ...mockCourse, _id: "existing-course" };
+  useCourseStore.setState({
+    teacherCourses: [existing],
+    _cachedTeacherId: "teacher-1",
+    _isTeacherFetched: true,
+  });
+  useCourseStore.getState().init(mockRepo);
+
+  await useCourseStore.getState().createCourse("Nuevo Curso", "2026-10", "teacher-1");
+
+  const state = useCourseStore.getState();
+  expect(state.teacherCourses[0]).toEqual(mockCourse); // prepended
+  expect(state.teacherCourses[1]).toEqual(existing);   // previous still there
+  expect(state._isTeacherFetched).toBe(false);
+  expect(state._cachedTeacherId).toBeNull();
+  expect(state.isCreating).toBe(false);
+});
+
+test("createCourse re-throws on failure", async () => {
+  (mockRepo.createCourse as jest.Mock).mockRejectedValue(new Error("Error de red"));
+  useCourseStore.getState().init(mockRepo);
+
+  await expect(
+    useCourseStore.getState().createCourse("X", "2026-10", "teacher-1")
+  ).rejects.toThrow("Error de red");
+
+  expect(useCourseStore.getState().isCreating).toBe(false);
 });

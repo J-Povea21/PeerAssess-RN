@@ -1,13 +1,18 @@
 // src/features/evaluations/data/datasources/remote/EvaluationRemoteDataSourceImpl.ts
 import { authorizedFetch } from "@/src/core/http/authorizedFetch";
 import { RobleDbClient } from "@/src/core/http/RobleDbClient";
-import { Assessment } from "../../../domain/entities/Assessment";
-import { Criteria } from "../../../domain/entities/Criteria";
+import { Assessment, NewAssessment } from "../../../domain/entities/Assessment";
+import { Criteria, NewCriteria } from "../../../domain/entities/Criteria";
 import { NewCriteriaScore } from "../../../domain/entities/CriteriaScore";
 import { NewEvaluation } from "../../../domain/entities/Evaluation";
 import { CriteriaAverage, StudentResult } from "../../../domain/entities/StudentResult";
 import { EvaluationDataSource } from "../EvaluationDataSource";
 import { CourseAssessment, PendingAssessment } from "../../../domain/repositories/EvaluationRepository";
+
+const idChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+function generateId(length = 12): string {
+  return Array.from({ length }, () => idChars[Math.floor(Math.random() * idChars.length)]).join("");
+}
 
 // Raw Roble column names — all FK suffixes are uppercase "ID"
 type AssessmentRow = {
@@ -102,7 +107,7 @@ export class EvaluationRemoteDataSourceImpl implements EvaluationDataSource {
             title: a.title,
             visibility: a.visibility,
             timeWindowMinutes: a.timeWindow,
-            status: "active",
+            status: a.status as Assessment["status"],
             deadline: a.deadline,
             createdAt: a.createdAt,
           } as Assessment,
@@ -139,7 +144,7 @@ export class EvaluationRemoteDataSourceImpl implements EvaluationDataSource {
 
     const assessmentsByCategory = await Promise.all(
       [...categoryToGroup.keys()].map((catId) =>
-        db.readTable<AssessmentRow>("Assessments", { categoryID: catId, status: "active" })
+        db.readTable<AssessmentRow>("Assessments", { categoryID: catId })
       )
     );
     const allAssessments = assessmentsByCategory.flat();
@@ -185,7 +190,7 @@ export class EvaluationRemoteDataSourceImpl implements EvaluationDataSource {
             title: a.title,
             visibility: a.visibility,
             timeWindowMinutes: a.timeWindow,
-            status: "active",
+            status: a.status as Assessment["status"],
             deadline: a.deadline,
             createdAt: a.createdAt,
           } as Assessment,
@@ -331,5 +336,83 @@ export class EvaluationRemoteDataSourceImpl implements EvaluationDataSource {
 
     const filtered = results.filter((r): r is StudentResult => r !== null);
     return filtered.sort((a, b) => b.mostRecentEvalAt.localeCompare(a.mostRecentEvalAt));
+  }
+  async getAssessmentsByCourse(categoryIds: string[]): Promise<Assessment[]> {
+    if (categoryIds.length === 0) return [];
+    const db = new RobleDbClient(authorizedFetch);
+
+    const assessmentsByCategory = await Promise.all(
+      categoryIds.map((catId) =>
+        db.readTable<AssessmentRow>("Assessments", { categoryID: catId })
+      )
+    );
+
+    return assessmentsByCategory.flat().map((a): Assessment => ({
+      _id: a._id,
+      categoryId: a.categoryID,
+      title: a.title,
+      visibility: a.visibility,
+      timeWindowMinutes: a.timeWindow,
+      status: a.status as Assessment["status"],
+      deadline: a.deadline,
+      createdAt: a.createdAt,
+    }));
+  }
+
+  async createAssessment(
+    assessment: NewAssessment,
+    criteria: NewCriteria[],
+    _courseId: string,
+  ): Promise<Assessment> {
+    const db = new RobleDbClient(authorizedFetch);
+
+    const assessmentId = generateId();
+    const createdAt = new Date().toISOString();
+    const deadline = new Date(
+      Date.now() + assessment.timeWindowMinutes * 60_000,
+    ).toISOString();
+
+    await db.insertRecord("Assessments", {
+      _id: assessmentId,
+      categoryID: assessment.categoryId,
+      title: assessment.title,
+      visibility: assessment.visibility,
+      timeWindow: assessment.timeWindowMinutes,
+      status: "active",
+      deadline,
+      createdAt,
+    });
+
+    await Promise.all(
+      criteria.map((c) =>
+        db.insertRecord("Criteria", {
+          _id: generateId(),
+          assessmentID: assessmentId,
+          name: c.name,
+          weight: c.weight,
+        }),
+      ),
+    );
+
+    return {
+      _id: assessmentId,
+      categoryId: assessment.categoryId,
+      title: assessment.title,
+      visibility: assessment.visibility,
+      timeWindowMinutes: assessment.timeWindowMinutes,
+      status: "active",
+      deadline,
+      createdAt,
+    };
+  }
+
+  async closeAssessment(assessmentId: string): Promise<void> {
+    const db = new RobleDbClient(authorizedFetch);
+    await db.updateRecord("Assessments", "_id", assessmentId, { status: "cancelled" });
+  }
+
+  async openAssessment(assessmentId: string): Promise<void> {
+    const db = new RobleDbClient(authorizedFetch);
+    await db.updateRecord("Assessments", "_id", assessmentId, { status: "active" });
   }
 }

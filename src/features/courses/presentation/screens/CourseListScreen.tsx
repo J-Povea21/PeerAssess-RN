@@ -1,6 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ActivityIndicator, FAB, Text } from "react-native-paper";
@@ -22,12 +23,14 @@ export default function CourseListScreen({ navigation }: { navigation: any }) {
   const { pendingAssessments, fetchPendingAssessments } = useEvaluationStore();
   const { categoriesByCourse, fetchCategories } = useGroupStore();
 
-  useEffect(() => {
-    if (user?.id) {
-      fetchCoursesByStudent(user.id);
-      fetchPendingAssessments(user.id);
-    }
-  }, [user?.id]);
+ useFocusEffect(
+    useCallback(() => {
+      if (user?.id) {
+        fetchCoursesByStudent(user.id);
+        fetchPendingAssessments(user.id);
+      }
+    }, [user?.id])
+  );
 
   useEffect(() => {
     courses.forEach((c) => {
@@ -57,7 +60,7 @@ export default function CourseListScreen({ navigation }: { navigation: any }) {
         .join("")
     : "?";
 
-  const pendingCourse = courses.find((c) => pendingCourseIds.has(c._id)) ?? null;
+  const pendingCourseCount = pendingCourseIds.size;
 
   if (isLoading && courses.length === 0) {
     return (
@@ -85,7 +88,7 @@ export default function CourseListScreen({ navigation }: { navigation: any }) {
         </View>
 
         {/* Pending evaluation banner — shows only when a course has pending evaluations */}
-        {pendingCourse && <PendingBanner course={pendingCourse} />}
+        {pendingCourseCount > 0 && <PendingBanner courseCount={pendingCourseCount} />}
 
         {/* Section label */}
         <Text style={styles.sectionLabel}>MIS CURSOS</Text>
