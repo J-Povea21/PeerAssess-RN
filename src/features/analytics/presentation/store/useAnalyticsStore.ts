@@ -58,7 +58,7 @@ export const useAnalyticsStore = create<AnalyticsState>((set, get) => ({
   fetchActivityAnalytics: async (assessmentId) => {
     const { _repo } = get();
     if (!_repo) throw new Error("AnalyticsStore not initialized");
-    set({ isLoadingAnalytics: true, error: null });
+    set({ isLoadingAnalytics: true, error: null, analytics: null });
     try {
       set({ analytics: await _repo.getActivityAnalytics(assessmentId) });
     } catch (e) {
