@@ -2,7 +2,6 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import { File } from "expo-file-system";
 import { LinearGradient } from "expo-linear-gradient";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import React, { useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import {
@@ -20,12 +19,14 @@ import {
   ParsedCsvImport,
 } from "@/src/features/groups/domain/parseBrightspaceCsv";
 import { useGroupStore } from "@/src/features/groups/presentation/store/useGroupStore";
-import { CoursesStackParamList } from "@/src/navigation/CoursesStackNavigator";
 import { AppColors } from "@/src/theme/appColors";
 
 const BG_COLORS = [AppColors.beige, "#FFFFFF", AppColors.rose + "0D"] as const;
 
-type Props = NativeStackScreenProps<CoursesStackParamList, "ImportCsv">;
+type Props = {
+  navigation: { goBack: () => void };
+  route: { params: { courseId: string } };
+};
 
 export default function ImportCsvScreen({ navigation, route }: Props) {
   const { courseId } = route.params;
