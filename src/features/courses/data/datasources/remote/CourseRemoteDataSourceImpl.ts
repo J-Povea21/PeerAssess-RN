@@ -70,6 +70,13 @@ export class CourseRemoteDataSourceImpl implements CourseDataSource {
           db.readTable<CountRow>("CourseEnrollments", { courseID: row._id }),
           db.readTable<CountRow>("GroupCategories", { courseID: row._id }),
         ]);
+        const assessmentRows = (
+          await Promise.all(
+            categoryRows.map((category) =>
+              db.readTable<CountRow>("Assessments", { categoryID: category._id })
+            )
+          )
+        ).flat();
 
         const course: Course = {
           _id: row._id,
@@ -78,7 +85,7 @@ export class CourseRemoteDataSourceImpl implements CourseDataSource {
           status: (row.status ?? "active") as CourseStatus,
           studentCount: studentRows.length,
           categoryCount: categoryRows.length,
-          evaluationCount: 0, // TODO: query via GroupCategories → Assessments
+          evaluationCount: assessmentRows.length,
           pendingEvaluations: 0, // N/A for teachers
           enrollmentCode: row.accessCode,
         };
